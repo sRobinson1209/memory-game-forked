@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import MySQLdb.cursors, re, hashlib
+from flask_sqlalchemy import SQLAlchemy 
+import os
 
 app = Flask(__name__)
 
@@ -9,10 +11,15 @@ app = Flask(__name__)
 app.secret_key = 'secret1209'
 
 # Enter your database connection details below
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Losartan50mg?'
-app.config['MYSQL_DB'] = 'pythonlogin2'
+#app.config['MYSQL_HOST'] = 'localhost'
+#app.config['MYSQL_USER'] = 'root'
+#app.config['MYSQL_PASSWORD'] = 'Losartan50mg?'
+#app.config['MYSQL_DB'] = 'pythonlogin2'
+
+#Changing the database to Heroku
+app.config['SQLALCHEMY_DATABASE_URI']=os.environ.get('DATABASE_URL')
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Intialize MySQL
 mysql = MySQL(app)
