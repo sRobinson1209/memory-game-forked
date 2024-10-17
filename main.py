@@ -106,8 +106,9 @@ def register():
            #10/17 password = hash.hexdigest()
 
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
-            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
-            mysql.connection.commit()
+            #10/17 cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
+            #10/17 mysql.connection.commit()
+            execute_query('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)', (username, password, email))
             msg = 'You have successfully registered!'
     elif request.method == 'POST':
         # Form is empty... (no POST data)
