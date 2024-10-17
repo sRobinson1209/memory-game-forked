@@ -4,6 +4,7 @@ import MySQLdb.cursors
 import MySQLdb.cursors, re, hashlib
 from flask_sqlalchemy import SQLAlchemy 
 import os
+import psycopg2
 
 app = Flask(__name__)
 
