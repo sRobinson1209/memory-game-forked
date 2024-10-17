@@ -18,13 +18,12 @@ app.secret_key = 'secret1209'
 #app.config['MYSQL_DB'] = 'pythonlogin2'
 
 #Changing the database to Heroku
-app.config['SQLALCHEMY_DATABASE_URI']=os.environ.get('DATABASE_URL')
+#10/17 - app.config['SQLALCHEMY_DATABASE_URI']=os.environ.get('DATABASE_URL')
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+#10/17 - app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+conn = psycopg2.connect(DATABASE_URL, sslmode= require)
 
-
-db = SQLAlchemy(app)
+#10/17- db = SQLAlchemy(app)
 
 # Intialize MySQL
 #mysql = MySQL(app)
