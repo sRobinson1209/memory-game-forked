@@ -17,6 +17,11 @@ app.config['MYSQL_DB'] = 'pythonlogin2'
 # Intialize MySQL
 mysql = MySQL(app)
 
+#redirecting the root to pythonlogin
+@app.route('/')
+def redirect_home():
+    return redirect('/pythonlogin/')
+
 # http://localhost:5000/pythonlogin/ - the following will be our login page, which will use both GET and POST requests
 @app.route('/pythonlogin/', methods=['GET', 'POST'])
 def login():
