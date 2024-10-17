@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from flask_mysqldb import MySQL
-import MySQLdb.cursors
-import MySQLdb.cursors, re, hashlib
+#10/17 from flask_mysqldb import MySQL
+#10/17 import MySQLdb.cursors
+#10/17 import MySQLdb.cursors, re, hashlib
 #from flask_sqlalchemy import SQLAlchemy 
 import os
 import psycopg2
@@ -12,21 +12,24 @@ app = Flask(__name__)
 app.secret_key = 'secret1209'
 
 # Enter your database connection details below
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Losartan50mg?'
-app.config['MYSQL_DB'] = 'pythonlogin2'
+# app.config['MYSQL_HOST'] = 'localhost'
+#app.config['MYSQL_USER'] = 'root'
+#app.config['MYSQL_PASSWORD'] = 'Losartan50mg?'
+#app.config['MYSQL_DB'] = 'pythonlogin2'
 
-#Changing the database to Heroku
-#10/17 - app.config['SQLALCHEMY_DATABASE_URI']=os.environ.get('DATABASE_URL')
+#Changing to herokus PostgreSQL
+DATABASE_URL = os.environ.get('DATABASE_URL')
+conn = psycopg2.connect(DATABASE_URL, sslmode = 'require')
 
-#10/17 - app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#10/17 conn = psycopg2.connect(DATABASE_URL, sslmode= require)
-
-#10/17- db = SQLAlchemy(app)
+#helper function to execute queries
+def execute_query(query, params=()):
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    conn.commit()
+    return cursor
 
 # Intialize MySQL
-mysql = MySQL(app)
+#10/17 mysql = MySQL(app)
 
 #redirecting the root to pythonlogin
 @app.route('/')
@@ -98,9 +101,10 @@ def register():
             msg = 'Please fill out the form!'
         else:
             # Hash the password
-            hash = password + app.secret_key
-            hash = hashlib.sha1(hash.encode())
-            password = hash.hexdigest()
+            #10/17hash = password + app.secret_key
+           #10/17 hash = hashlib.sha1(hash.encode())
+           #10/17 password = hash.hexdigest()
+
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             mysql.connection.commit()
