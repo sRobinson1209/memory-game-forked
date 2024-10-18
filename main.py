@@ -23,10 +23,17 @@ conn = psycopg2.connect(DATABASE_URL, sslmode = 'require')
 
 #helper function to execute queries
 def execute_query(query, params=()):
-    cursor = conn.cursor()
-    cursor.execute(query, params)
-    conn.commit()
+    try:
+        conn = psycopg2.connect(DATABASE_URL, sslmode='required')
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        conn.commit()
     return cursor
+    except Exception as e:
+        print(f"Error executing query: {e}")
+    finally:
+        cursor.close()
+        conn.close()
 
 # Intialize MySQL
 #10/17 mysql = MySQL(app)
@@ -91,7 +98,7 @@ def register():
         #10/17 cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
         #10/17 account = cursor.fetchone()
 
-        cursor = execute_query('SELECT * FROM accounts WHERE username =%s', (username))
+        cursor = execute_query('SELECT * FROM accounts WHERE username = %s', (username,))
         account = cursor.fetchone()
         # If account exists show error and validation checks
         if account:
@@ -111,7 +118,7 @@ def register():
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
             #10/17 cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             #10/17 mysql.connection.commit()
-            execute_query('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)', (username, password, email))
+            execute_query('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)', (username, password, email,))
             msg = 'You have successfully registered!'
     elif request.method == 'POST':
         # Form is empty... (no POST data)
