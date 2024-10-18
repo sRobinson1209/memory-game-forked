@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 #from flask_sqlalchemy import SQLAlchemy 
 import os
 import psycopg2
+import psycopg2.extras
 
 app = Flask(__name__)
 
@@ -22,15 +23,20 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode = 'require')
 
 #helper function to execute queries
-def execute_query(query, params=()):
+def execute_query(query, params=(), fetch = False):
     conn = None
     cursor = None
+    result = None
     try:
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cursor = conn.cursor()
         cursor.execute(query, params)
         conn.commit()
-        return cursor
+
+        if fetch:
+            result = cursor.fetchone() #or cursor.fetchall() if expecting multiple rows 
+
+        return result
     except Exception as e:
         print(f"Error executing query: {e}")
     finally:
@@ -58,7 +64,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         # Check if account exists using MySQL
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s', (username, password,))
         # Fetch one record and return result
         account = cursor.fetchone()
@@ -102,8 +108,9 @@ def register():
         #10/17 cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
         #10/17 account = cursor.fetchone()
 
-        cursor = execute_query('SELECT * FROM accounts WHERE username = %s', (username,))
-        account = cursor.fetchone()
+        #10/17 cursor = execute_query('SELECT * FROM accounts WHERE username = %s', (username,))
+        query = 'SELECT * FROM accounts WHERE username = %s'
+        account = execute_query(query, (username,), fetch = True)
         # If account exists show error and validation checks
         if account:
             msg = 'Account already exists!'
@@ -122,7 +129,8 @@ def register():
             # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
             #10/17 cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             #10/17 mysql.connection.commit()
-            execute_query('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)', (username, password, email,))
+            query = ('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)'
+            execute_query(query, (username, password, email))
             msg = 'You have successfully registered!'
     elif request.method == 'POST':
         # Form is empty... (no POST data)
@@ -140,15 +148,25 @@ def home():
     # User is not loggedin redirect to login page
     return redirect(url_for('login'))
 
-# http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for logged in users
+# http://localhost:5000/pythonlogin/profile - this will be the profile page, only accessible for logged in users
 @app.route('/pythonlogin/profile')
 def profile():
     # Check if the user is logged in
     if 'loggedin' in session:
+        try:
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
         # We need all the account info for the user so we can display it on the profile page
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        #cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+
+        query = 'SELECT * FROM accounts id = %s'
+        cursor.execute(quer, (session[id],))
         account = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
         # Show the profile page with account info
         return render_template('profile.html', account=account)
     # User is not logged in redirect to login page
