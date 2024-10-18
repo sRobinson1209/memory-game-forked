@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import os
 import psycopg2
 import psycopg2.extras
+import re
 
 app = Flask(__name__)
 
