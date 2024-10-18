@@ -161,18 +161,18 @@ def profile():
         #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         #cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
 
-        query = 'SELECT * FROM accounts id = %s'
-        cursor.execute(quer, (session[id],))
-        account = cursor.fetchone()
+            query = 'SELECT * FROM accounts id = %s'
+            cursor.execute(quer, (session[id],))
+            account = cursor.fetchone()
 
-        cursor.close()
-        conn.close()
-        # Show the profile page with account info
-        return render_template('profile.html', account=account)
+            cursor.close()
+            conn.close()
+            # Show the profile page with account info
+            return render_template('profile.html', account=account)
 
-    except Exception as e:
-        print(f"Error fetching profile data: {e}")
-        return redirect(url_for('login'))
+        except Exception as e:
+            print(f"Error fetching profile data: {e}")
+            return redirect(url_for('login'))
     # User is not logged in redirect to login page
     return redirect(url_for('login'))
 
