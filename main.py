@@ -28,7 +28,7 @@ def execute_query(query, params=()):
         cursor = conn.cursor()
         cursor.execute(query, params)
         conn.commit()
-    return cursor
+        return cursor
     except Exception as e:
         print(f"Error executing query: {e}")
     finally:
