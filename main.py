@@ -67,7 +67,7 @@ def login():
         password = request.form['password']
 
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'),sslmode='require')
-        cursor = conn.cursor
+        cursor = conn.cursor()
 
         # Check if account exists using MySQL
         #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
