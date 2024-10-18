@@ -175,7 +175,7 @@ def profile():
         #cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
 
             query = 'SELECT * FROM accounts id = %s'
-            cursor.execute(quer, (session[id],))
+            cursor.execute(query, (session[id],))
             account = cursor.fetchone()
 
             cursor.close()
