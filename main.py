@@ -23,8 +23,10 @@ conn = psycopg2.connect(DATABASE_URL, sslmode = 'require')
 
 #helper function to execute queries
 def execute_query(query, params=()):
+    conn = None
+    cursor = None
     try:
-        conn = psycopg2.connect(DATABASE_URL, sslmode='required')
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         cursor = conn.cursor()
         cursor.execute(query, params)
         conn.commit()
@@ -32,8 +34,10 @@ def execute_query(query, params=()):
     except Exception as e:
         print(f"Error executing query: {e}")
     finally:
-        cursor.close()
-        conn.close()
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # Intialize MySQL
 #10/17 mysql = MySQL(app)
