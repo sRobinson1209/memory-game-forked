@@ -66,7 +66,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        conn.psycopg2.connect(os.environ.get('DATABASE_URL'),sslmode='require')
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'),sslmode='require')
         cursor = conn.cursor
 
         # Check if account exists using MySQL
@@ -91,7 +91,7 @@ def login():
         finally:
             cursor.close()
             conn.close()
-            
+
     # Show the login form with message (if any)
     return render_template('index.html', msg=msg)
 # http://localhost:5000/python/logout - this will be the logout page
