@@ -174,8 +174,8 @@ def profile():
         #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         #cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
 
-            query = 'SELECT * FROM accounts id = %s'
-            cursor.execute(query, (session[id],))
+            query = 'SELECT * FROM accounts WHERE id = %s'
+            cursor.execute(query, (session['id'],))
             account = cursor.fetchone()
 
             cursor.close()
