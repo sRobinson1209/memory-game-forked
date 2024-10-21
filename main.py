@@ -1,8 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-#10/17 from flask_mysqldb import MySQL
-#10/17 import MySQLdb.cursors
-#10/17 import MySQLdb.cursors, re, hashlib
-#from flask_sqlalchemy import SQLAlchemy 
+from flask import Flask, render_template, request, redirect, url_for, session 
 import os
 import psycopg2
 import psycopg2.extras
@@ -13,11 +9,7 @@ app = Flask(__name__)
 # Change this to your secret key (it can be anything, it's for extra protection)
 app.secret_key = 'secret1209'
 
-# Enter your database connection details below
-# app.config['MYSQL_HOST'] = 'localhost'
-#app.config['MYSQL_USER'] = 'root'
-#app.config['MYSQL_PASSWORD'] = 'Losartan50mg?'
-#app.config['MYSQL_DB'] = 'pythonlogin2'
+
 
 #Changing to herokus PostgreSQL
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -46,8 +38,6 @@ def execute_query(query, params=(), fetch = False):
         if conn:
             conn.close()
 
-# Intialize MySQL
-#10/17 mysql = MySQL(app)
 
 #redirecting the root to pythonlogin
 @app.route('/')
@@ -69,8 +59,7 @@ def login():
         conn = psycopg2.connect(os.environ.get('DATABASE_URL'),sslmode='require')
         cursor = conn.cursor()
 
-        # Check if account exists using MySQL
-        #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        # Check if account exists 
         try:
             cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s', (username, password,))
         # Fetch one record and return result
@@ -116,12 +105,6 @@ def register():
         password = request.form['password']
         email = request.form['email']
 
-        # Check if account exists using MySQL
-        #10/17 cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        #10/17 cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
-        #10/17 account = cursor.fetchone()
-
-        #10/17 cursor = execute_query('SELECT * FROM accounts WHERE username = %s', (username,))
         query = 'SELECT * FROM accounts WHERE username = %s'
         account = execute_query(query, (username,), fetch = True)
         # If account exists show error and validation checks
@@ -134,14 +117,7 @@ def register():
         elif not username or not password or not email:
             msg = 'Please fill out the form!'
         else:
-            # Hash the password
-            #10/17hash = password + app.secret_key
-           #10/17 hash = hashlib.sha1(hash.encode())
-           #10/17 password = hash.hexdigest()
-
-            # Account doesn't exist, and the form data is valid, so insert the new account into the accounts table
-            #10/17 cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
-            #10/17 mysql.connection.commit()
+            
             query = ('INSERT INTO accounts (username, password, email) VALUES (%s, %s, %s)')
             execute_query(query, (username, password, email))
             msg = 'You have successfully registered!'
@@ -171,9 +147,6 @@ def profile():
             cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         # We need all the account info for the user so we can display it on the profile page
-        #cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        #cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
-
             query = 'SELECT * FROM accounts WHERE id = %s'
             cursor.execute(query, (session['id'],))
             account = cursor.fetchone()
