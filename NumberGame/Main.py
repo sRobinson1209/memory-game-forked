@@ -36,7 +36,7 @@ def main():
         game_mode = input()
 
     if game_mode == 'r' or game_mode == 'R':
-        r = set_level_parameters_relaxed
+        r = set_level_parameters_relaxed()
         print(r)
         
     elif game_mode == 's' or game_mode == 'S':
@@ -51,7 +51,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-'''
-GameFunctionality File for organization purposes
-'''
