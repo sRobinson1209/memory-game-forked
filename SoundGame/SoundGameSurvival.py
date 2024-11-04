@@ -1,18 +1,4 @@
-'''
-Program to Generate a Sequence of Sounds the User Needs to Mimic/Recite back
------------------------
 
-- generate sound sequence
-    - can be random sounds
-    - generated in a specific range of midi notes
-    - length and speed must be able to inc
-    - NO RHYTHM
-
-- user input mimmicking sound
-    - keys must correlate with sound 
-    - check its in right order
-    
-'''
 import pretty_midi
 import random
 import keyboard
@@ -31,48 +17,42 @@ level = 0
 points = 0
 score = 0
 
-
-
 #generates a new key
 def generate_new_key():
 
-    global current_key
-    global current_key_scale
+    global current_key, current_key_scale
+    key_dictionary = {
+        "c": [60, 62, 64, 65, 67, 69, 71, 72],
+        "d": [62, 64, 66, 67, 69, 71, 73, 74],
+        "e": [64, 66, 68, 69, 71, 73, 75, 76],
+        "f": [65, 67, 69, 70, 72, 74, 76, 77],
+        "g": [55, 57, 59, 60, 62, 64, 66, 67],
+        "a": [57, 59, 61, 62, 64, 66, 68, 69],
+        "b": [59, 61, 63, 64, 66, 68, 70, 71]
+    }
 
-    key_dictionary = {"c" : [60, 62, 64, 65, 67, 69, 71, 72], "d": [62, 64, 66, 67, 69, 71, 73, 74],
-                            "e" : [64, 66, 68, 69, 71, 73, 75, 76], "f" : [65, 67, 69, 70, 72, 74, 76, 77], "g" : [55, 57, 59, 60, 62, 64, 66, 67],
-                            "a" : [57, 59, 61, 62, 64, 66, 68, 69], "b" : [59, 61, 63, 64, 66, 68, 70, 71]}
+    #cycle through keys
+    current_key_index = list(key_dictionary).index(current_key)
 
-    for key in key_dictionary.keys():
-            
-            if key == current_key:
-                try:
-                
-                    current_key_index = list(key_dictionary).index(current_key) #get the index of the current key
-                    current_key = list(key_dictionary)[current_key_index+1] #replace the current_key as the next key
-                    current_key_scale = key_dictionary[current_key] #replace the current_scale as the next scale
-                    return
-                    
-                except IndexError:
-                    current_key = "c" #choose the 1st key if previous key was the last in the array
-                    current_key_scale = key_dictionary[current_key]
-                    return
+    try:
+        current_key = list(key_dictionary)[current_key_index + 1]
+
+    except IndexError:
+        current_key = "c"  #reset to "c" if at end
+
+    current_key_scale = key_dictionary[current_key]
 
 
 #generates a new instrument
 def generate_new_instrument():
 
     global current_instrument
+    instruments = ['Acoustic Grand Piano', 'Rock Organ', 'Music Box', 'Flute', 'Choir Aahs', 'Violin', 'Trumpet', 'Bassoon', 'Cello']
+    try:
+        current_instrument = instruments[(instruments.index(current_instrument) + 1) % len(instruments)]
+    except ValueError:
+        current_instrument = 'Acoustic Grand Piano'
 
-    instruments = ['Acoustic Grand Piano', 'Rock Organ', 'Music Box', 'Flute', 'Choir Aahs', 'Violin', 'Trumpet','Bassoon', 'Cello']
-    for i, instrument in enumerate(instruments):
-            if instrument == current_instrument:
-                try:
-                    current_instrument = instruments[i+1]
-                    return
-                except IndexError:
-                    current_instrument = instruments[0] #choose the 1st instrument if previous instrument was the last in the array
-                    return
 
 #calculates the parameters based on the level the user is on
 def calculate_parameters():
@@ -80,21 +60,21 @@ def calculate_parameters():
     global level
     global current_speed
     global current_length
-    global current_instrument
-    global current_key
-    global current_key_scale
+    global score
 
     #every 5th level increase speed
     if level != 0 and level % 5 == 0:
-        current_speed = current_speed - 0.07 
+        current_speed = current_speed - 0.09
+        score +=  2
     
     #every 10th level inc length and dec speed by a little (so game isn't impossible)
     if level != 0 and level % 10 == 0:
 
-        if current_length != 8: #make sure notes don't go out of octive range
+        if current_length < 8: #make sure notes don't go out of octive range
             current_length = current_length + 1
 
         current_speed = current_speed + 0.02
+        score += 3
 
     #every 7th level change key
     if level != 0 and level % 7 == 0:
@@ -105,11 +85,10 @@ def calculate_parameters():
     if level != 0 and level % 15 == 0:
         generate_new_instrument()
         
-     #MAKE SURE YOU ADD TO THE SCORE!
 
 
 #creates the sound the user must recite
-def create_sound(play_note = False, note_number = 0):
+def generate_melody(play_note = False, note_number = 0):
 
     calculate_parameters() #retervies correct parameters
 
@@ -138,6 +117,7 @@ def create_sound(play_note = False, note_number = 0):
 
         return None, None
     
+    level += 1
     #randomize the notes to create a sequence
     if current_length > len(current_key_scale): #check to make sure the length is not longer than list
         raise ValueError("The length cannot be greater than the size of the given list.")
@@ -162,16 +142,17 @@ def create_sound(play_note = False, note_number = 0):
 
     
     play_sound(MIDI_file)
-    checked_input = check_user_input()
-    if checked_input == False:
-        print(f"Game Over! Level: {level} Score: {score}")
+    #checked_input = check_user_input()
+    checked_input = True
 
     if checked_input:
-        level += 1
-        score
+        score += 2
+        print(f"Current Score: {score}, Current Level: {level}")
+        return generate_melody()
 
-    #return MIDI_file, random_seq
-
+    else:
+        print(f"Game Over! Level: {level} Score: {score}")
+        return
 
 
 #plays midi file
@@ -210,7 +191,7 @@ def get_user_input():
             if letter in keyboard_note_dict:
                 note = keyboard_note_dict[letter]
 
-                create_sound(True, note) #<-------- modify the create sound function to handle this part
+                generate_melody(True, note) 
                 user_input.append(note)
 
             elif letter == 'q':
@@ -233,22 +214,6 @@ def check_user_input():
     return True
 
 #make a method that deletes the generated file after it has been used so there isn't a ton of memory usage!!!
-create_sound()
-'''
-ORDER of OPS:
-1. start game
-	- create_sound
-		- calculate_parameters
-			- generate_new_key
-			- generate_new_instrument
-2. generated MIDI file is played for the user
-	- play_sound
-3. user recites the sound
-	- get_user_input
-		- get_current_key_scale
-		- create_sound
-4. check the user input
-	- check_user_input
+#create_sound()
 
-'''
 
