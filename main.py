@@ -3,6 +3,7 @@ import os
 import psycopg2
 import psycopg2.extras
 import re
+#from NumberGameRelaxed import set_level_parameters_relaxed
 
 app = Flask(__name__)
 
@@ -161,6 +162,22 @@ def profile():
             return redirect(url_for('login'))
     # User is not logged in redirect to login page
     return redirect(url_for('login'))
+
+##implementing relaxed number game 
+#@app.route ('/select_game_mode')
+#def select_game_mode():
+    #return render_template('select_game_mode.html')
+
+#@app.route ('/play_game', methods=['POST'])
+#def play_game():
+    #game_mode = request.form.get('game_mode')
+
+    #if game_mode == 'relaxed':
+        #game_result = set_level_parameters_relaxed()
+    #else:
+        #return render_template('game_result.html', result = game_result)
+
+
 
 
 

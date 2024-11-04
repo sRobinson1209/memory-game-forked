@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Game Mode</title>
+</head>
+<body>
+    <h1>Select Game Mode</h1>
+    <form action="{{ url_for('play_game') }}" method="post">
+        <button type="submit" name="game_mode" value="relaxed">Relaxed Mode</button>
+        <button type="submit" name="game_mode" value="survival">Survival Mode</button>
+    </form>
+    <p>Or read the <a href="{{ url_for('show_instructions') }}">instructions</a> for each mode.</p>
+</body>
+</html>
