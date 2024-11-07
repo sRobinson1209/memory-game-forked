@@ -3,22 +3,74 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Melody Recitation</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Melody Memory Game</title>
+
+     <style>
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: #f1f1f1;
+            display: none; /* Initially hide the canvas */
+        }
+        .square {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 10px;
+            background-color: gray;
+            text-align: center;
+            line-height: 50px; /* Center text vertically */
+            font-size: 18px;
+            color: white;
+        }
+        
+    </style>
 </head>
 
 <body>
-    <div id="game-container">
-        <h1>Melody Recitation Game</h1>
-        <button id="start-game">Start Game</button> <!--Start button-->
+    <h1>Melody Memory</h1>
+    <p>Instructions: Recite the melody to win!</p>
 
-        <div id="melody-display"></div> <!--Display melody-->
+    <button type="button" onclick="startGame()">Start</button>
 
-        <div id="user-input-display"></div> <!--Display User Input-->
-    </div>
+    <div id="squareContainer"></div> <!-- Div to hold squares -->
 
-    <script src="script.js"></script>
+    <script>
+        function startGame() {
+            const squareContainer = document.getElementById('squareContainer');
+            squareContainer.innerHTML = ''; // Clear existing squares
+
+            // Fetch current_length and current_key_scale from the server
+            fetch('/get_current_length')
+                .then(response => response.json())
+                .then(lengthData => {
+                    const currentLength = lengthData.current_length;
+
+                    fetch('/get_current_key_scale')
+                        .then(response => response.json())
+                        .then(scaleData => {
+                            const currentKeyScale = scaleData.current_key_scale;
+
+                            // Draw squares based on current_length and map them to the scale
+                            drawSquares(squareContainer, currentLength, currentKeyScale);
+                        });
+                });
+        }
+
+        function drawSquares(container, count, keyScale) {
+            for (let i = 0; i < count; i++) {
+                const square = document.createElement('div');
+                square.classList.add('square');
+
+                // Map the square to the corresponding element in current_key_scale
+                square.innerText = keyScale[i];
+
+                // Add the square to the container
+                container.appendChild(square);
+            }
+        }
+    </script>
+
+
 </body>
-
 </html>
