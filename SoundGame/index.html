@@ -40,37 +40,50 @@
             const squareContainer = document.getElementById('squareContainer');
             squareContainer.innerHTML = ''; // Clear existing squares
 
-            // Fetch current_length and current_key_scale from the server
+            //send a POST request to trigger melody generation
+            fetch('/start_melody', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message); //message can be displayed in UI if needed
+            
+
+
+            // Fetch current_length and current_letters from the server
             fetch('/get_current_length')
                 .then(response => response.json())
                 .then(lengthData => {
                     const currentLength = lengthData.current_length;
 
-                    fetch('/get_current_key_scale')
+                    fetch('/get_letters')
                         .then(response => response.json())
                         .then(scaleData => {
-                            const currentKeyScale = scaleData.current_key_scale;
+                            const _Letters = scaleData.letters;
 
                             // Draw squares based on current_length and map them to the scale
-                            drawSquares(squareContainer, currentLength, currentKeyScale);
+                            drawSquares(squareContainer, currentLength, _Letters);
                         });
                 });
-        }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
-        function drawSquares(container, count, keyScale) {
+        function drawSquares(container, count, _Letters) {
             for (let i = 0; i < count; i++) {
                 const square = document.createElement('div');
                 square.classList.add('square');
 
-                // Map the square to the corresponding element in current_key_scale
-                square.innerText = keyScale[i];
+                // Map the square to the corresponding element in _Letters
+                square.innerText = _Letters[i];
 
                 // Add the square to the container
                 container.appendChild(square);
             }
         }
     </script>
-
-
 </body>
 </html>

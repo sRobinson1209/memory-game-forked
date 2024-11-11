@@ -4,11 +4,16 @@ import random
 import keyboard
 import time
 import pygame
+import os
+import glob
+import io
+import pygame.midi
 
 current_instrument = 'Acoustic Grand Piano' #default instrument
 current_key = 'c' #default key
 current_key_scale = [60, 62, 64, 65, 67, 69, 71, 72] #default scale
 random_seq = [] #generated random sequence
+current_letters_and_notes_dict = {}
 
 current_speed = 1 #default speed
 current_length = 3 #default sequence length
@@ -16,6 +21,8 @@ current_length = 3 #default sequence length
 level = 0
 points = 0
 score = 0
+
+#midi_folder = '/Users/sophiabrix/Desktop/memory-game/SoundGame/MIDI_FILES'
 
 #generates a new key
 def generate_new_key():
@@ -90,6 +97,9 @@ def calculate_parameters():
 #creates the sound the user must recite
 def generate_melody(play_note = False, note_number = 0):
 
+     #delete previous midi files
+    #delete_melody_file()
+
     calculate_parameters() #retervies correct parameters
 
     global current_instrument
@@ -98,6 +108,7 @@ def generate_melody(play_note = False, note_number = 0):
     global random_seq
     global score
     global level
+    global current_letters_and_notes_dict
 
     #create a PrettyMIDI object
     midi = pretty_midi.PrettyMIDI()
@@ -122,9 +133,15 @@ def generate_melody(play_note = False, note_number = 0):
     if current_length > len(current_key_scale): #check to make sure the length is not longer than list
         raise ValueError("The length cannot be greater than the size of the given list.")
     
-    smaller_scale = current_key_scale[0:current_length]
-    random_seq = random.sample(smaller_scale, current_length)
+    smaller_scale = current_key_scale[0:current_length] #limited range of notes
+    random_seq = random.sample(smaller_scale, current_length) #create random seq based on smaller scale
 
+    keyboard_letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
+
+    #map random_seq to keyboard keys
+    current_letters_and_notes_dict = dict(zip(keyboard_letters, smaller_scale))
+    
+    
     #add notes to instrument
     for i, note_num in enumerate(random_seq):
         start_time = i * current_speed
@@ -136,14 +153,41 @@ def generate_melody(play_note = False, note_number = 0):
     #add the instrument to the PrettyMIDI object
     midi.instruments.append(instr)
 
-    #save the MIDI file
-    midi.write('generated_melody.mid')
-    MIDI_file = 'generated_melody.mid'
+    # Save the MIDI file to the specified folder
+    #MIDI_file= os.path.join(midi_folder, 'generated_melody.mid')
+    #midi.write(MIDI_file)  # Save the MIDI file to the full path
 
+    # Convert PrettyMIDI object to byte stream (instead of saving to file)
+    midi_stream = io.BytesIO()
+    midi.write(midi_stream)
+    midi_stream.seek(0)  # Rewind the byte stream
+    # Try initializing pygame.midi
+    try:
+        pygame.midi.init()
+        
+        # Open the default output device
+        player = pygame.midi.Output(pygame.midi.get_default_output_id())
+        
+        # Play the MIDI stream
+        while True:
+            midi_data = midi_stream.read(1024)  # Read chunks of the stream
+            if not midi_data:
+                break  # End when the stream is finished
+            player.write([midi_data])  # Send to output device
+        
+        # Close the player and pygame.midi
+        player.close()
+        pygame.midi.quit()
     
-    play_sound(MIDI_file)
-    #checked_input = check_user_input()
-    checked_input = True
+    except Exception as e:
+        print("Error initializing pygame.midi:", e)
+        print("You might need to install pygame with MIDI support or use a different method to play the MIDI.")
+
+
+    #play_sound(MIDI_file)
+    #user_input = get_user_input()
+    #checked_input = check_user_input(user_input)
+    checked_input = False
 
     if checked_input:
         score += 2
@@ -153,7 +197,6 @@ def generate_melody(play_note = False, note_number = 0):
     else:
         print(f"Game Over! Level: {level} Score: {score}")
         return
-
 
 #plays midi file
 def play_sound(MIDI_file):
@@ -166,6 +209,20 @@ def play_sound(MIDI_file):
 
     while pygame.mixer.music.get_busy():
         time.sleep(1)
+
+    pygame.mixer.quit()  # Ensures Pygame releases control of the file
+    
+   
+
+def delete_melody_file():
+    """Deletes the specified MIDI file from folder after it has been played."""
+    midi_folder = '/Users/sophiabrix/Desktop/memory-game/SoundGame/MIDI_FILES'
+    for file_path in glob.glob(os.path.join(midi_folder, "*.mid")):
+        try:
+            os.remove(file_path)
+            print(f"Deleted: {file_path}")
+        except OSError as e:
+            print(f"Error deleting {file_path}: {e}")
 
 
 def get_user_input():
@@ -201,10 +258,10 @@ def get_user_input():
     return user_input
     
 
-def check_user_input():
+def check_user_input(user_input):
 
     global random_seq
-    user_input = get_user_input()
+    #user_input = get_user_input()
 
     for i, s in enumerate(random_seq):
 
@@ -213,7 +270,5 @@ def check_user_input():
         
     return True
 
-#make a method that deletes the generated file after it has been used so there isn't a ton of memory usage!!!
-#create_sound()
 
 
