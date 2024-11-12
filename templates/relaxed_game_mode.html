@@ -10,6 +10,9 @@
     <div class="container">
         <h1>Relaxed Game Mode</h1>
         <h3>Memorize the sequence!</h3>
+
+        <!-- Display the current level -->
+        <h2>Level {{ level }}</h2>
         
         <!-- Display the generated number sequence -->
         <div id="number-sequence">
@@ -27,6 +30,8 @@
             <button type="submit" name="action" value="submit">Submit</button>
             <button type="submit" name="action" value="skip">Skip</button>
             <button type="submit" name="action" value="quit">Quit</button>
+
+        
         </form>
         
         <!-- Display feedback messages -->

@@ -142,7 +142,7 @@ def profile():
 
             cursor.close()
             conn.close()
-            return render_template('profile.html', account=account)
+            return render_template('profile.html', account=account, highest_level=account['highest_level'])
 
         except Exception as e:
             print(f"Error fetching profile data: {e}")
@@ -168,6 +168,25 @@ def select_game_mode():
     # If GET request, render the page to allow user to choose game mode
     return render_template('select_game_mode.html')
 
+#adding points and highest level to user profile 
+def update_score_in_database(user_id, points, current_level):
+    # First get the user's current highest level from the database
+    query = "SELECT highest_level FROM accounts WHERE id = %s"
+    result = execute_query(query, (user_id,), fetch=True)
+    
+    # If the current level is higher, update the highest_level in the database
+    if result and current_level > result[0]:
+        update_query = """
+            UPDATE accounts 
+            SET score = score + %s, highest_level = %s 
+            WHERE id = %s
+        """
+        execute_query(update_query, (points, current_level, user_id))
+    else:
+        # Only update the score if no new highest level is achieved
+        update_query = "UPDATE accounts SET score = score + %s WHERE id = %s"
+        execute_query(update_query, (points, user_id))
+
 
 # Relaxed game mode route
 @app.route('/relaxed_game_mode', methods=['GET', 'POST'])
@@ -181,20 +200,29 @@ def relaxed_game_mode():
     if level_num % 7 == 0 and level_num != 0:
         gen_nums_length += 1
 
-    # Generate the numbers
-    gen_nums = [random.randint(0, 9) for _ in range(gen_nums_length)]
-    print("Generated numbers:", gen_nums)  # Debugging line
+    # Generate the numbers only if they dont exist in session already 
+    if 'gen_nums' not in session:
+        gen_nums = [random.randint(0, 9) for _ in range(gen_nums_length)]
+        session['gen_nums'] = gen_nums
+    else:
+        gen_nums = session['gen_nums'] # retrieve existing numbers from the session
+
+    print("Generated numbers:", gen_nums)
+
 
     # Handle form submission
     if request.method == 'POST':
         action = request.form.get('action')
 
         if action == 'quit':
-            return render_template('relaxed_game_mode.html', result="You quit the game!", level=level_num)
+            session.pop('level_num', None)
+            session.pop('gen_nums', None) #clear generated numbers on quit
+            return redirect(url_for('home'))
 
         if action == 'skip':
             level_num += 1
             session['level_num'] = level_num  # Update session with new level
+            session.pop('gen_nums', None)
             return redirect(url_for('relaxed_game_mode'))  # Reload to the next level
 
         # Handle the user input (numbers entered by user)
@@ -208,12 +236,19 @@ def relaxed_game_mode():
             except ValueError:
                 return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Please enter valid numbers.")
 
-            print("Checking user input:", recited_nums)  # Debugging line
+            #Debugging line
+            print("Checking user input:", recited_nums)  
 
             # Compare user input with generated numbers
             if recited_nums == gen_nums:
                 level_num += 1
                 session['level_num'] = level_num  # Update session with new level
+                session.pop('gen_nums', None)
+
+                #update score 
+                points = 10  # Example: Award 10 points per passed level
+                update_score_in_database(session['id'], points, level_num)
+
                 return redirect(url_for('relaxed_game_mode'))  # Proceed to next level
             else:
                 return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Incorrect input, try again.")
