@@ -48,13 +48,15 @@ p {
 /* Button styling */
 button {
     padding: 10px 20px;
-    font-size: 1em;
+    font-size: 16px;
     margin: 10px 5px;
-    border: none;
+    border: 0px;
     border-radius: 5px;
+    background-color: lightskyblue;
     color: black; /* Black text for buttons */
     cursor: pointer;
-    transition: background-color 0.3s;
+    box-shadow: 0 0 10px lightskyblue;
+    transition: all 0.3s ease-in-out;
 }
 
 /* Specific button colors */
@@ -63,7 +65,7 @@ button[type="submit"] {
 }
 
 button[name="action"][value="skip"] {
-    background-color: #94f5b1; /* Soft mint green */
+    background-color: #2b98f7; /* Soft mint green */
 }
 
 button[name="action"][value="quit"] {
@@ -72,7 +74,7 @@ button[name="action"][value="quit"] {
 
 /* Button hover effect */
 button:hover {
-    opacity: 0.8;
+    box-shadow: 0 0 20px lightskyblue;
 }
 
 /* Error and result message styling */
