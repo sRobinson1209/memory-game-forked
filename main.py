@@ -157,9 +157,9 @@ def select_game_mode():
         game_mode = request.form.get('game_mode')
         
         # Check if game_mode was selected and then process accordingly
-        if game_mode == 'relaxed':
+        if game_mode == 'num_relaxed':
             return redirect(url_for('relaxed_game_mode'))  # Redirect to relaxed game mode
-        elif game_mode == 'survival':
+        elif game_mode == 'num_survival':
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
         else:
             # If no game mode is selected, show an error or redirect back
@@ -191,14 +191,18 @@ def update_score_in_database(user_id, points, current_level):
 # Relaxed game mode route
 @app.route('/relaxed_game_mode', methods=['GET', 'POST'])
 def relaxed_game_mode():
+    if 'level_num' not in session or 'gen_nums' not in session:
+        session['level_num'] = 1 # set level to one once loaded into the game
+        session['gen_num'] = [] #clear generated numbers to regenerate for new session
+
     # Get the level and number length from session, or set default values
-    level_num = session.get('level_num', 0)
+    level_num = session.get('level_num', 1)
+    base_num_length = 3
     gen_nums_length = session.get('gen_nums_length', 3)
     gen_nums_speed = 1  # Speed stays the same
 
     # Increase the difficulty every 7 levels
-    if level_num % 7 == 0 and level_num != 0:
-        gen_nums_length += 1
+    gen_nums_length = base_num_length + (level_num // 7)
 
     # Generate the numbers only if they dont exist in session already 
     if 'gen_nums' not in session:
@@ -208,7 +212,6 @@ def relaxed_game_mode():
         gen_nums = session['gen_nums'] # retrieve existing numbers from the session
 
     print("Generated numbers:", gen_nums)
-
 
     # Handle form submission
     if request.method == 'POST':
@@ -220,37 +223,96 @@ def relaxed_game_mode():
             return redirect(url_for('home'))
 
         if action == 'skip':
+            session.pop('gen_nums', None)
             level_num += 1
             session['level_num'] = level_num  # Update session with new level
-            session.pop('gen_nums', None)
             return redirect(url_for('relaxed_game_mode'))  # Reload to the next level
 
         # Handle the user input (numbers entered by user)
-        recited_nums = request.form.get('numbers_input', '').strip()
-        print("User entered:", recited_nums)  # Debugging line
+        if action == 'submit':
+            recited_nums = request.form.get('numbers_input', '').strip()
+            print("User entered:", recited_nums)  # Debugging line
 
-        if recited_nums:
-            try:
-                # Convert user input into a list of integers
-                recited_nums = [int(num) for num in recited_nums.split()]
-            except ValueError:
-                return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Please enter valid numbers.")
+            if recited_nums:
+                try:
+                    # Convert user input into a list of integers
+                    recited_nums = [int(num) for num in recited_nums.split()]
+                except ValueError:
+                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Please enter valid numbers.")
 
-            #Debugging line
-            print("Checking user input:", recited_nums)  
+                #Debugging line
+                print("Checking user input:", recited_nums)  
 
-            # Compare user input with generated numbers
-            if recited_nums == gen_nums:
-                level_num += 1
-                session['level_num'] = level_num  # Update session with new level
-                session.pop('gen_nums', None)
+                # Compare user input with generated numbers
+                if recited_nums == gen_nums:
+                    level_num += 1
+                    session['level_num'] = level_num  # Update session with new level
+                    session.pop('gen_nums', None)
 
-                #update score 
-                points = 10  # Example: Award 10 points per passed level
-                update_score_in_database(session['id'], points, level_num)
+                    #update score 
+                    points = 5  # Example: Award 10 points per passed level
+                    update_score_in_database(session['id'], points, level_num)
 
-                return redirect(url_for('relaxed_game_mode'))  # Proceed to next level
-            else:
-                return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Incorrect input, try again.")
+                    return redirect(url_for('relaxed_game_mode'))  # Proceed to next level
+                else:
+                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Incorrect input, try again.")
 
     return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num)
+
+# Survival game mode route
+@app.route('/survival_game_mode', methods=['GET', 'POST'])
+def survival_game_mode():
+    # Get the level and number length from session, or set default values
+    level_num = session.get('level_num', 1)
+    base_num_length = 3
+    gen_nums_length = base_num_length + (level_num // 7)
+    
+    # Generate numbers if they don't exist in the session
+    if 'gen_nums' not in session:
+        gen_nums = [random.randint(0, 9) for _ in range(gen_nums_length)]
+        session['gen_nums'] = gen_nums
+    else:
+        gen_nums = session['gen_nums']
+    
+    # Handle form submission
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'quit':
+            session.pop('level_num', None)
+            session.pop('gen_nums', None)
+            return redirect(url_for('home'))
+
+        if action == 'skip':
+            level_num += 1
+            session['level_num'] = level_num
+            session.pop('gen_nums', None)
+            return redirect(url_for('survival_game_mode'))
+
+        if action == 'submit':
+            recited_nums = request.form.get('numbers_input', '').strip()
+
+            if recited_nums:
+                try:
+                    recited_nums = [int(num) for num in recited_nums.split()]
+                except ValueError:
+                    return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num, error="Enter valid numbers.")
+
+                # Check if user input matches generated sequence
+                if recited_nums == gen_nums:
+                    level_num += 1
+                    session['level_num'] = level_num
+                    session.pop('gen_nums', None)
+                    return redirect(url_for('survival_game_mode'))
+
+                    #update score 
+                    points = 10  # Example: Award 10 points per passed level
+                    update_score_in_database(session['id'], points, level_num)
+                else:
+                    # Restart game on incorrect answer
+                    session['level_num'] = 1
+                    session.pop('gen_nums', None)
+                    return render_template('survival_game_mode.html', numbers=[], level=1, error="Incorrect! Game Over!")
+
+    return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num)
+

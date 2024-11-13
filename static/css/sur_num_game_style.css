@@ -1,8 +1,8 @@
 /* General page styling */
 body {
     font-family: 'Press Start 2P', sans-serif; /* Pixelated font for Minecraft feel */
-    background-color: #b2e3a8; /* Light Green background */
-    color: #0f0f0f; /* Black text */
+    background-color: #2e2e2e; /* Dark gray background */
+    color: #d4d4d4; /* Light gray text */
     margin: 0;
     padding: 0;
     display: flex;
@@ -15,7 +15,7 @@ body {
 .container {
     max-width: 500px;
     width: 90%;
-    background-color: #40db73; /* Darker container color */
+    background-color: #3b3b3b; /* Darker container color */
     padding: 20px;
     border-radius: 5px; /* Squarer edges */
     box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.5); /* Heavier shadow for depth */
@@ -24,7 +24,7 @@ body {
 }
 
 h2 {
-    color: #0a5b06; /* Minecraft green for headings */
+    color: #a0c334; /* Minecraft green for headings */
     margin-bottom: 20px;
 }
 
@@ -42,7 +42,7 @@ p {
     border: 2px solid #555555; /* Dark border */
     border-radius: 3px;
     background-color: #222222; /* Darker input background */
-    color: #6beb4f; /* Minecraft green text */
+    color: #a0c334; /* Minecraft green text */
     margin-bottom: 20px;
     text-align: center;
 }
