@@ -16,12 +16,12 @@ const beatDuration = 1000;  // Total time for a beat to visually warn the player
 const beatRadius = 100;     // Size of the fully expanded circle
 let activeCircles = [];
 
-let currentStopwatchValue = 0;   // Displayed stopwatch value
-let playerTime = 0;
-let accumulatedTime = 0;
-
-let gameMode;  // Variable to store selected game mode
-let currentRound = 1; //Self explanatory
+// Game state variables
+let currentStopwatchValue = 0; 
+let playerTime = 0; //The time since the player's last input
+let accumulatedTime = 0; //All the beat times added together. 
+let gameMode; 
+let currentRound = 1; 
 let mistakes = 0; //The number of missed beats you've made so far, for survival mode. 
 let tolerance = 0.15; //How lenient the game is on accepting a late/early input. 
 let beatNumber = 4; //the number of rhythm beats to generate. Set to 4 by default. 
@@ -53,43 +53,123 @@ function initializeCanvas()
     }
 }
 
-/**
- * Starts the stopwatch and updates the display up to the target cumulative beat time.
- * 
- * @param {number} cumulativeTime - The cumulative time in seconds for the current beat.
- */
-function startStopwatch(cumulativeTime) 
+// Function to show the mode selection menu
+function showModeSelectionMenu() 
 {
-    let currentTime = 0;
-    clearInterval(stopwatchInterval);
+    document.getElementById('mode-selection-menu').style.display = 'flex';
+    document.getElementById('feedback').textContent = "Waiting for game mode selection...";  // Update feedback
+}
 
-    // Update the main stopwatch display every 10 milliseconds
-    stopwatchInterval = setInterval(() => 
+// Event listeners for mode buttons
+document.getElementById('relaxed-mode-button').addEventListener('click', () => startGame('Relaxed'));
+document.getElementById('survival-mode-button').addEventListener('click', () => startGame('Survival'));
+
+// Show the menu when the page loads without starting the game
+document.addEventListener('DOMContentLoaded', showModeSelectionMenu);
+
+/**
+ * Records player input when spacebar is pressed and evaluates timing.
+ */
+document.addEventListener('keydown', (event) => 
+{
+    if (event.code === 'Space' && isPlaying) 
     {
-        currentTime += 0.01;  // Increment time by 10ms
-        currentStopwatchValue = currentTime;
-        stopwatchDisplay.textContent = `${currentStopwatchValue.toFixed(2)} / ${cumulativeTime.toFixed(2)}`;  
+        const currentTime = (performance.now() - startTime) / 1000;
+        userInput.push(currentTime);
+
+        /*
+        These next few lines of code took hours of debugging. The only purpose of the playerTime variable is for the actual value side of the 
+        history of log beats. Originally, I had a seperate timer for this, but that stopped working for some reason and I couldn't figure out why,
+        so now the solution is just dependant on the userInput time, which was always stable. currentTime keeps counting up from when the player side
+        initially starts until the game stops, so after adding it to playerTime, it needed to be subtracted from the total time of the accumulated beats
+        so far so it would show a number that's under the time of the actual beat. Meaning, on beat 2, showing .78/.9 instead of 1.5/.9, despite both being
+        registered as correct technically. 
+        */
+        playerTime = 0;
+        playerTime += currentTime;
+        playerTime -= accumulatedTime;  
         
-        // Stop the stopwatch interval when reaching the target cumulative time
-        if (currentTime >= cumulativeTime) 
+        logBeat(rhythm[index], playerTime);
+
+        accumulatedTime += rhythm[index];
+
+        // Log the cumulative expected time and captured stopwatch value
+        
+        index++;
+
+        console.log("User pressed space, registered input:", playerTime.toFixed(2));
+
+        if (index === rhythm.length) 
         {
-            clearInterval(stopwatchInterval);
+            isPlaying = false;
+            clearInterval(stopwatchInterval);      // Stop the main stopwatch
+            evaluateInput();
         }
-    }, 10);
+    }
+});
+
+// Function to start the game based on selected mode
+async function startGame(selectedMode) 
+{
+    console.log("Game starting with mode:", selectedMode);  // Debug log
+    gameMode = selectedMode;  // Set the game mode
+
+    currentRound = 1;  // Reset to the first round
+    updateGameInfo();  // Set initial values for round and mode display
+
+    document.getElementById('mode-selection-menu').style.display = 'none';  // Hide the menu
+    document.getElementById('feedback').textContent = "Game starting...";  // Update feedback
+    await new Promise(resolve => setTimeout(resolve, 1000)) //Wait for a sec so the previous line shows
+
+    initializeCanvas();  // Initialize canvas
+    fetchRhythm();       // Fetch rhythm only after mode selection
+    requestAnimationFrame(drawCircles);  // Start drawing circles
 }
 
 /**
- * Logs the expected and actual time for each beat to the stopwatch log.
- * 
- * @param {number} expectedTime - The expected time for the beat.
- * @param {number} actualTime - The actual time when the player pressed the key.
+ * Progresses the game to the next round, resetting the round specific variables. 
  */
-function logBeat(expectedTime, actualTime) 
+function nextRound() 
 {
-    // Create a new log entry with expected and actual times
-    const logEntry = document.createElement('div');
-    logEntry.textContent = `Beat ${index + 1}: Expected - ${expectedTime.toFixed(2)}s, Actual - ${actualTime.toFixed(2)}s`;
-    stopwatchLog.appendChild(logEntry);
+    rhythm = [];
+    userInput = [];
+    index = 0;
+    activeCircles = [];
+    stopwatchLog.innerHTML = "";  // Clear the log when progressing rounds
+    currentRound++;
+    accumulatedTime = 0;
+    updateGameInfo()
+
+    document.getElementById('feedback').textContent = "Fetching new rhythm...";
+    fetchRhythm();
+}
+
+// Quit the game and return to the mode selection menu
+function quitGame() 
+{
+    // Hide game elements
+    document.getElementById('feedback').textContent = "Waiting for game mode selection...";
+    document.getElementById('next-round').style.display = 'none';
+    document.getElementById('quit-button').style.display = 'none';
+    document.getElementById('stopwatch').textContent = "0.00";
+    document.getElementById('stopwatch-log').innerHTML = "";  // Clear the log
+
+    // Reset core game variables
+    currentRound = 1;
+    mistakes = 0; 
+    tolerance = 0.15; 
+    accumulatedTime = 0;
+    stopwatchLog.innerHTML = "";
+    rhythm = [];
+    userInput = [];
+    index = 0;
+    activeCircles = [];
+
+    // Show the mode selection menu
+    document.getElementById('mode-selection-menu').style.display = 'flex';
+    isPlaying = false;  // Ensure no ongoing game continues
+
+    console.log("Game quit and reset. Ready for new game mode selection.");
 }
 
 /**
@@ -187,45 +267,18 @@ async function prepareForInputPhase()
 }
 
 /**
- * Records player input when spacebar is pressed and evaluates timing.
+ * Logs the expected and actual time for each beat to the stopwatch log.
+ * 
+ * @param {number} expectedTime - The expected time for the beat.
+ * @param {number} actualTime - The actual time when the player pressed the key.
  */
-document.addEventListener('keydown', (event) => 
+function logBeat(expectedTime, actualTime) 
 {
-    if (event.code === 'Space' && isPlaying) 
-    {
-        const currentTime = (performance.now() - startTime) / 1000;
-        userInput.push(currentTime);
-
-        /*
-        These next few lines of code took hours of debugging. The only purpose of the playerTime variable is for the actual value side of the 
-        history of log beats. Originally, I had a seperate timer for this, but that stopped working for some reason and I couldn't figure out why,
-        so now the solution is just dependant on the userInput time, which was always stable. currentTime keeps counting up from when the player side
-        initially starts until the game stops, so after adding it to playerTime, it needed to be subtracted from the total time of the accumulated beats
-        so far so it would show a number that's under the time of the actual beat. Meaning, on beat 2, showing .78/.9 instead of 1.5/.9, despite both being
-        registered as correct technically. 
-        */
-        playerTime = 0;
-        playerTime += currentTime;
-        playerTime -= accumulatedTime;  
-        
-        logBeat(rhythm[index], playerTime);
-
-        accumulatedTime += rhythm[index];
-
-        // Log the cumulative expected time and captured stopwatch value
-        
-        index++;
-
-        console.log("User pressed space, registered input:", playerTime.toFixed(2));
-
-        if (index === rhythm.length) 
-        {
-            isPlaying = false;
-            clearInterval(stopwatchInterval);      // Stop the main stopwatch
-            evaluateInput();
-        }
-    }
-});
+    // Create a new log entry with expected and actual times
+    const logEntry = document.createElement('div');
+    logEntry.textContent = `Beat ${index + 1}: Expected - ${expectedTime.toFixed(2)}s, Actual - ${actualTime.toFixed(2)}s`;
+    stopwatchLog.appendChild(logEntry);
+}
 
 /**
  * Compares user input timings to expected rhythm timings and provides feedback.
@@ -279,9 +332,20 @@ async function evaluateInput()
     {
         document.getElementById('next-round').style.display = 'block';
         document.getElementById('quit-button').style.display = 'block';
-    }
+    } 
+}
 
-    
+// Function to update the displayed round and mode
+function updateGameInfo() 
+{
+    document.getElementById('round-display').textContent = `Round: ${currentRound}`;
+    document.getElementById('mode-display').textContent = `Mode: ${gameMode}`;
+
+    if(gameMode === 'Survival')
+    {
+        document.getElementById('mistake-display').textContent = `Mistakes: ${mistakes}/3`;
+        document.getElementById('mistake-display').style.display = 'block'
+    }  
 }
 
 /**
@@ -341,94 +405,27 @@ function drawTargetCircle()
     ctx.stroke();
 }
 
-// Function to show the mode selection menu
-function showModeSelectionMenu() 
-{
-    document.getElementById('mode-selection-menu').style.display = 'flex';
-    document.getElementById('feedback').textContent = "Waiting for game mode selection...";  // Update feedback
-}
-
-// Function to start the game based on selected mode
-async function startGame(selectedMode) 
-{
-    console.log("Game starting with mode:", selectedMode);  // Debug log
-    gameMode = selectedMode;  // Set the game mode
-
-    currentRound = 1;  // Reset to the first round
-    updateGameInfo();  // Set initial values for round and mode display
-
-    document.getElementById('mode-selection-menu').style.display = 'none';  // Hide the menu
-    document.getElementById('feedback').textContent = "Game starting...";  // Update feedback
-    await new Promise(resolve => setTimeout(resolve, 1000)) //Wait for a sec so the previous line shows
-
-    initializeCanvas();  // Initialize canvas
-    fetchRhythm();       // Fetch rhythm only after mode selection
-    requestAnimationFrame(drawCircles);  // Start drawing circles
-}
-
-// Event listeners for mode buttons
-document.getElementById('relaxed-mode-button').addEventListener('click', () => startGame('Relaxed'));
-document.getElementById('survival-mode-button').addEventListener('click', () => startGame('Survival'));
-
-// Show the menu when the page loads without starting the game
-document.addEventListener('DOMContentLoaded', showModeSelectionMenu);
-
-// Function to update the displayed round and mode
-function updateGameInfo() 
-{
-    document.getElementById('round-display').textContent = `Round: ${currentRound}`;
-    document.getElementById('mode-display').textContent = `Mode: ${gameMode}`;
-
-    if(gameMode === 'Survival')
-    {
-        document.getElementById('mistake-display').textContent = `Mistakes: ${mistakes}/3`;
-        document.getElementById('mistake-display').style.display = 'block'
-    }
-    
-}
-
 /**
- * Progresses the game to the next round, resetting the round specific variables. 
+ * Starts the stopwatch and updates the display up to the target cumulative beat time.
+ * 
+ * @param {number} cumulativeTime - The cumulative time in seconds for the current beat.
  */
-function nextRound() 
+function startStopwatch(cumulativeTime) 
 {
-    rhythm = [];
-    userInput = [];
-    index = 0;
-    activeCircles = [];
-    stopwatchLog.innerHTML = "";  // Clear the log when progressing rounds
-    currentRound++;
-    accumulatedTime = 0;
-    updateGameInfo()
+    let currentTime = 0;
+    clearInterval(stopwatchInterval);
 
-    document.getElementById('feedback').textContent = "Fetching new rhythm...";
-    fetchRhythm();
-}
-
-// Quit the game and return to the mode selection menu
-function quitGame() 
-{
-    // Hide game elements
-    document.getElementById('feedback').textContent = "Waiting for game mode selection...";
-    document.getElementById('next-round').style.display = 'none';
-    document.getElementById('quit-button').style.display = 'none';
-    document.getElementById('stopwatch').textContent = "0.00";
-    document.getElementById('stopwatch-log').innerHTML = "";  // Clear the log
-
-    // Reset core game variables
-    currentRound = 1;
-    mistakes = 0; 
-    tolerance = 0.15; 
-    accumulatedTime = 0;
-    stopwatchLog.innerHTML = "";
-    rhythm = [];
-    userInput = [];
-    index = 0;
-    activeCircles = [];
-
-    // Show the mode selection menu
-    document.getElementById('mode-selection-menu').style.display = 'flex';
-    isPlaying = false;  // Ensure no ongoing game continues
-
-    console.log("Game quit and reset. Ready for new game mode selection.");
+    // Update the main stopwatch display every 10 milliseconds
+    stopwatchInterval = setInterval(() => 
+    {
+        currentTime += 0.01;  // Increment time by 10ms
+        currentStopwatchValue = currentTime;
+        stopwatchDisplay.textContent = `${currentStopwatchValue.toFixed(2)} / ${cumulativeTime.toFixed(2)}`;  
+        
+        // Stop the stopwatch interval when reaching the target cumulative time
+        if (currentTime >= cumulativeTime) 
+        {
+            clearInterval(stopwatchInterval);
+        }
+    }, 10);
 }
