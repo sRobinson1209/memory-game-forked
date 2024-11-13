@@ -200,3 +200,14 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchRhythm();
     requestAnimationFrame(drawCircles);  // Ensure the animation loop continues
 });
+
+async function generateRhythm() {
+    try{ 
+        const response = await fetch('generate_rhythm?length=4');
+        const data = await response.json();
+        console.log(data.rhythm); //outputs the rhythm sequence to the console
+    } catch(error){
+        console,error("Error fetching rhythm:", error);
+    }
+    
+}
