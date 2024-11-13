@@ -157,9 +157,9 @@ def select_game_mode():
         game_mode = request.form.get('game_mode')
         
         # Check if game_mode was selected and then process accordingly
-        if game_mode == 'relaxed':
+        if game_mode == 'num_relaxed':
             return redirect(url_for('relaxed_game_mode'))  # Redirect to relaxed game mode
-        elif game_mode == 'survival':
+        elif game_mode == 'num_survival':
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
         else:
             # If no game mode is selected, show an error or redirect back
