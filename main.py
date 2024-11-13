@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import os
 import psycopg2
 import psycopg2.extras
@@ -7,11 +7,13 @@ import random
 from dotenv import load_dotenv
 from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
 from NumberGame.NumberGameSurvival import set_level_parameters_survival
+from flask_cors import CORS
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = 'secret1209'  # Necessary for session management
 
 # Database URL for PostgreSQL
@@ -161,6 +163,8 @@ def select_game_mode():
             return redirect(url_for('relaxed_game_mode'))  # Redirect to relaxed game mode
         elif game_mode == 'num_survival':
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
+        elif game_mode == 'rhythm':
+            return redirect(url_for('rhythm_game')) # redirect to rhythm game
         else:
             # If no game mode is selected, show an error or redirect back
             return redirect(url_for('home'))
@@ -315,4 +319,18 @@ def survival_game_mode():
                     return render_template('survival_game_mode.html', numbers=[], level=1, error="Incorrect! Game Over!")
 
     return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num)
+
+#implementing Rhythm Game 
+
+#route to hold rhythm template 
+@app.route('/rhythm_game') 
+def rhythm_game():
+    return render_template('rhythm_index.html')
+
+# Endpoint to generate a rhythm
+@app.route('/generate_rhythm', methods=['GET'])
+def generate_rhythm():
+    length = int(request.args.get('length', 4))  # Default rhythm length of 4 beats
+    rhythm = [random.uniform(0.5, 1.5) for _ in range(length)]  # Random time intervals
+    return jsonify({'rhythm': rhythm})
 

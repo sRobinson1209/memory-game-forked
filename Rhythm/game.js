@@ -415,17 +415,20 @@ function startStopwatch(cumulativeTime)
     let currentTime = 0;
     clearInterval(stopwatchInterval);
 
-    // Update the main stopwatch display every 10 milliseconds
-    stopwatchInterval = setInterval(() => 
-    {
-        currentTime += 0.01;  // Increment time by 10ms
-        currentStopwatchValue = currentTime;
-        stopwatchDisplay.textContent = `${currentStopwatchValue.toFixed(2)} / ${cumulativeTime.toFixed(2)}`;  
-        
-        // Stop the stopwatch interval when reaching the target cumulative time
-        if (currentTime >= cumulativeTime) 
-        {
-            clearInterval(stopwatchInterval);
-        }
-    }, 10);
+// Ensure canvas is initialized after DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializeCanvas();  // Initialize canvas after DOM is ready
+    fetchRhythm();
+    requestAnimationFrame(drawCircles);  // Ensure the animation loop continues
+});
+
+async function generateRhythm() {
+    try{ 
+        const response = await fetch('generate_rhythm?length=4');
+        const data = await response.json();
+        console.log(data.rhythm); //outputs the rhythm sequence to the console
+    } catch(error){
+        console,error("Error fetching rhythm:", error);
+    }
+    
 }
