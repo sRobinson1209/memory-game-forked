@@ -6,12 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Melody Memory Game</title>
 
-     <style>
-        canvas {
-            border: 1px solid #d3d3d3;
-            background-color: #f1f1f1;
-            display: none; /* Initially hide the canvas */
-        }
+    <style>
         .square {
             display: inline-block;
             width: 50px;
@@ -19,12 +14,16 @@
             margin: 10px;
             background-color: gray;
             text-align: center;
-            line-height: 50px; /* Center text vertically */
+            line-height: 50px;
             font-size: 18px;
             color: white;
         }
-        
+        .square.red {
+            background-color: red;
+        }
     </style>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 
 <body>
@@ -32,15 +31,22 @@
     <p>Instructions: Recite the melody to win!</p>
 
     <button type="button" onclick="startGame()">Start</button>
+    <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
+    <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
 
     <div id="squareContainer"></div> <!-- Div to hold squares -->
 
     <script>
+        const socket = io(); // Initialize SocketIO connection
+        let listeningMode = false; // Toggle for listening mode
+        let recordedKeys = []; // Store pressed keys
+
         function startGame() {
             const squareContainer = document.getElementById('squareContainer');
             squareContainer.innerHTML = ''; // Clear existing squares
+            drawSquares(squareContainer);
 
-            //send a POST request to trigger melody generation
+            // Send a POST request to trigger melody generation
             fetch('/start_melody', {
                 method: 'POST',
                 headers: {
@@ -49,41 +55,109 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log(data.message); //message can be displayed in UI if needed
-            
+                console.log(data.message); // Message can be displayed in UI if needed
+                document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
+            })
+            .catch(error => console.error('Error:', error));
+        }
 
+        function startListening() {
+            listeningMode = true; // Enable listening mode
+            recordedKeys = []; // Clear recorded keys from any previous session
+            document.addEventListener('keydown', handleKeyPress);
+            document.addEventListener('keyup', handleKeyRelease);
+            document.getElementById('listenButton').style.display = 'none'; // Hide "Start Listening" button
+            document.getElementById('stopButton').style.display = 'inline-block'; // Show "Stop Listening" button
+        }
 
-            // Fetch current_length and current_letters from the server
-            fetch('/get_current_length')
-                .then(response => response.json())
-                .then(lengthData => {
-                    const currentLength = lengthData.current_length;
+        function stopListening() {
+            listeningMode = false; // Disable listening mode
+            document.removeEventListener('keydown', handleKeyPress);
+            document.removeEventListener('keyup', handleKeyRelease);
+            document.getElementById('stopButton').style.display = 'none'; // Hide "Stop Listening" button
 
-                    fetch('/get_letters')
-                        .then(response => response.json())
-                        .then(scaleData => {
-                            const _Letters = scaleData.letters;
+            console.log('Recorded keys:', recordedKeys); // For debugging
+            // Send recorded keys to backend
+            fetch('/user_input', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userInput: recordedKeys }) // Send the keys as JSON
+            })
+            .then(response => response.json())
+            .then(data => console.log(data.message))
+            .catch(error => console.error('Error:', error));
+        }
 
-                            // Draw squares based on current_length and map them to the scale
-                            drawSquares(squareContainer, currentLength, _Letters);
-                        });
-                });
-        })
-        .catch(error => console.error('Error:', error));
-    }
-
-        function drawSquares(container, count, _Letters) {
-            for (let i = 0; i < count; i++) {
+        function drawSquares(container) {
+            const letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
+            letters.forEach(letter => {
                 const square = document.createElement('div');
                 square.classList.add('square');
-
-                // Map the square to the corresponding element in _Letters
-                square.innerText = _Letters[i];
-
-                // Add the square to the container
+                square.setAttribute('id', `square-${letter}`); // Give each square a unique ID based on the letter
+                square.innerText = letter;
                 container.appendChild(square);
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (!listeningMode) return;
+
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            if (square && !recordedKeys.includes(key)) {
+                recordedKeys.push(key); // Record the pressed key
+                square.classList.add('red'); // Turn square red
+                playMidiForKey(key); // Play the corresponding MIDI file
             }
         }
+
+        function handleKeyRelease(event) {
+            if (!listeningMode) return;
+
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            if (square) {
+                square.classList.remove('red'); // Revert square color
+            }
+        }
+
+        function playMidiForKey(key) {
+            const midiMap = {
+                'a': 'MID_FILES/c_note_one_sec.mid',
+                's': 'MID_FILES/d_note_one_sec.mid',
+                'd': 'MID_FILES/e_note_one_sec.mid',
+                'f': 'MID_FILES/f_note_one_sec.mid',
+                'g': 'MID_FILES/g_note_one_sec.mid',
+                'h': 'MID_FILES/a_note_one_sec.mid',
+                'j': 'MID_FILES/b_note_one_sec.mid',
+                'k': 'MID_FILES/c_oct_note_one_sec.mid'
+            };
+
+            const midiFile = midiMap[key];
+            if (midiFile) {
+                socket.emit('play_midi', { midiFile: midiFile }); // Emit event to server to play MIDI
+            }
+        }
+
+        // Listen for the 'highlight_square' event from the server
+        socket.on('highlight_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.add('red');
+            }
+        });
+
+        // Listen for the 'reset_square' event to turn squares back to grey
+        socket.on('reset_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.remove('red');
+            }
+        });
     </script>
 </body>
 </html>
