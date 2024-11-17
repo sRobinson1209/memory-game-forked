@@ -41,25 +41,49 @@
         let listeningMode = false; // Toggle for listening mode
         let recordedKeys = []; // Store pressed keys
 
-        function startGame() {
-            const squareContainer = document.getElementById('squareContainer');
-            squareContainer.innerHTML = ''; // Clear existing squares
-            drawSquares(squareContainer);
+        // function startGame() {
+        //     const squareContainer = document.getElementById('squareContainer');
+        //     squareContainer.innerHTML = ''; // Clear existing squares
+        //     drawSquares(squareContainer);
 
-            // Send a POST request to trigger melody generation
-            fetch('/start_melody', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data.message); // Message can be displayed in UI if needed
-                document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
-            })
-            .catch(error => console.error('Error:', error));
-        }
+        //     // Send a POST request to trigger melody generation
+        //     fetch('/start_melody', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         }
+        //     })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         console.log(data.message); // Message can be displayed in UI if needed
+        //         document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
+        //     })
+        //     .catch(error => console.error('Error:', error));
+        // }
+
+        function startGame() {
+        const squareContainer = document.getElementById('squareContainer');
+        squareContainer.innerHTML = ''; // Clear existing squares
+        drawSquares(squareContainer);
+
+        startMelody();
+    }
+
+    function startMelody() {
+        // Send a POST request to trigger melody generation
+        fetch('/start_melody', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); // Display message if needed
+            document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
         function startListening() {
             listeningMode = true; // Enable listening mode
@@ -158,6 +182,18 @@
                 square.classList.remove('red');
             }
         });
+        // Automatically move to the next round if user input was correct
+    socket.on('next_round', function() {
+        console.log('User input was correct. Starting next round...');
+        startMelody();  // Start a new round automatically
+    });
+
+    // Handle game over
+    socket.on('game_over', function(data) {
+        const { level, score } = data;
+        alert(`Game Over!\nLevel: ${level}\nScore: ${score}`);
+    });
+
     </script>
 </body>
 </html>
