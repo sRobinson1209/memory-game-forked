@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survival Game Mode</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sur_num_game_style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Survival Game Mode</h1>
+        <h3>Memorize the sequence!</h3>
+
+        <!-- Display the current level -->
+        <h2>Level {{ level }}</h2>
+        
+        <!-- Display the generated number sequence -->
+        <div id="number-sequence">
+            {% if numbers %}
+                <p id="numbers">{{ numbers | join(' ') }}</p>
+            {% endif %}
+        </div>
+        
+        <!-- Form for user to input their answer -->
+        <form method="POST">
+            <label for="numbers_input">Enter the sequence:</label>
+            <input type="text" id="numbers_input" name="numbers_input" placeholder="Enter numbers here" required>
+            
+            <!-- Buttons for submit, skip, and quit actions -->
+            <button type="submit" name="action" value="submit">Submit</button>
+        
+        </form>
+        
+        <!-- Display feedback messages -->
+        {% if error %}
+            <p style="color:rgb(237, 118, 118);">{{ error }}</p>
+        {% endif %}
+        {% if result %}
+            <p>{{ result }}</p>
+        {% endif %}
+        
+        <!-- Button to navigate back to select game mode page -->
+        <a href="{{ url_for('home') }}">
+            <button type="button">Quit and Go Home</button>
+        </a>
+    </div>
+    
+    <!-- Add a script to hide the numbers after 2 seconds -->
+    <script>
+        window.onload = function() {
+            var numberSequence = document.getElementById('numbers');
+            setTimeout(function() {
+                if (numberSequence) {
+                    numberSequence.style.display = 'none';  // Hide numbers
+                }
+            }, 2000);  // Hide after 2 seconds
+        }
+    </script>
+</body>
+</html>
