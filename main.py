@@ -151,6 +151,13 @@ def profile():
             return redirect(url_for('login'))
     return redirect(url_for('login'))
 
+# Dashboard route - only accessible for logged-in users - Liliana
+@app.route('/pythonlogin/dashboard')
+def dashboard():
+    if 'loggedin' in session:
+        return render_template('dashboard.html', username=session['username'])
+    return redirect(url_for('login'))
+
 
 # Game mode selection route
 @app.route('/select_game_mode', methods=['GET', 'POST'])
