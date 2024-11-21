@@ -341,3 +341,7 @@ def generate_rhythm():
     rhythm = [random.uniform(0.5, 1.5) for _ in range(length)]  # Random time intervals
     return jsonify({'rhythm': rhythm})
 
+
+
+
+
