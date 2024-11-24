@@ -3,10 +3,7 @@ import os
 import pygame
 import random
 
-level = 0
-score = 0
-current_speed = 1000 #default 1 second
-current_length = 3
+
 current_midi_files = []
 current_user_input = []
 
@@ -15,30 +12,6 @@ letters_and_files_dict = {'MID_FILES/c_note_one_sec.mid' : 'a', 'MID_FILES/d_not
                           'MID_FILES/b_note_one_sec.mid' : 'j', 'MID_FILES/c_oct_note_one_sec.mid':'k'}
 
 
-#calculates the parameters based on the level the user is on
-def calculate_parameters():
-    print("Called calculate_parameters!")
-    
-    global level
-    global current_speed
-    global current_length
-    global score
-
-    #every 5th level increase speed
-    if level != 0 and level % 5 == 0:
-        current_speed = current_speed - 300
-        score +=  2
-    
-    #every 10th level inc length and dec speed by a little (so game isn't impossible)
-    if level != 0 and level % 3 == 0:
-
-        if current_length < 8: #make sure notes don't go out of octive range
-            current_length = current_length + 1
-
-        current_speed = current_speed + 20
-        score += 3
-    
-    print(f"Current Level: {level}\nCurrent Score: {score}\nCurrent Speed: {current_speed}\nCurrent Length: {current_length}")
 
 #called from frontend to update global variable
 def get_midi_files(midi_files):
@@ -81,3 +54,9 @@ def check_user_input():
 
     return True
 
+def update_global_variables():
+
+    global score
+    global level
+    score += 2
+    level += 1

@@ -41,26 +41,6 @@
         let listeningMode = false; // Toggle for listening mode
         let recordedKeys = []; // Store pressed keys
 
-        // function startGame() {
-        //     const squareContainer = document.getElementById('squareContainer');
-        //     squareContainer.innerHTML = ''; // Clear existing squares
-        //     drawSquares(squareContainer);
-
-        //     // Send a POST request to trigger melody generation
-        //     fetch('/start_melody', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         }
-        //     })
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         console.log(data.message); // Message can be displayed in UI if needed
-        //         document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
-        //     })
-        //     .catch(error => console.error('Error:', error));
-        // }
-
         function startGame() {
         const squareContainer = document.getElementById('squareContainer');
         squareContainer.innerHTML = ''; // Clear existing squares

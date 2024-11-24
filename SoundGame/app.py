@@ -5,13 +5,17 @@ import random
 import time
 import pygame
 
-from SoundGameSurvival import level, score, current_length, current_speed, letters_and_files_dict, calculate_parameters, get_midi_files, get_user_input, check_user_input
+from SoundGameSurvival import letters_and_files_dict, get_midi_files, get_user_input, check_user_input
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
 
 letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 is_playing = False
+level = 0
+score = 0
+current_speed = 1000 #default 1 second
+current_length = 3
 
 @app.route('/')
 def melody_memory():
@@ -41,6 +45,32 @@ def receive_user_input():
     message = move_on_or_game_over()
     
     return jsonify({'message': message})
+
+#calculates the parameters based on the level the user is on
+def calculate_parameters():
+    print("Called calculate_parameters!")
+    
+    global level
+    global current_speed
+    global current_length
+    global score
+
+    #every 5th level increase speed
+    if level != 0 and level % 5 == 0:
+        current_speed = current_speed - 300
+        score +=  2
+    
+    #every 10th level inc length and dec speed by a little (so game isn't impossible)
+    if level != 0 and level % 3 == 0:
+
+        if current_length < 8: #make sure notes don't go out of octive range
+            current_length = current_length + 1
+
+        current_speed = current_speed + 20
+        score += 3
+    
+    print(f"Current Level: {level}\nCurrent Score: {score}\nCurrent Speed: {current_speed}\nCurrent Length: {current_length}")
+
 
 def play_random_midi_files():
     global is_playing
@@ -95,6 +125,7 @@ def move_on_or_game_over():
     print(f"User input has been checked: {checked_user_input}")
 
     if checked_user_input:
+        #update_global_variables()
         score += 2
         level += 1
         print("User input was correct!")
