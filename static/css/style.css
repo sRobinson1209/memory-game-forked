@@ -7,56 +7,56 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-/*@media (max-width: 600px) {
+@media (max-width: 600px) {
     * {
         font-size: 14px;
     }
-} */
+}
 
 body {
-    background-color: #6eda8f; /* A greenish tone, like Minecraft grass */
-    /*background-image: url(C:\Users\sierr\Downloads\memory-game-forked\static\images\background_image.jpg);*/
-    /*    background-image: url("{{ url_for('static', filename='images/background_image.jpg') }} ");*/
+    background-color: #52d9f3; /* A greenish tone, like Minecraft grass */
+    /* background-image: url(C:\Users\sierr\Downloads\memory-game-forked\static\images\background_image.jpg); */
+    /* background-image: url("{{ url_for('static', filename='images/background_image.jpg') }} ");*/
     background-size: cover;
     margin: 0;
-    color: #2e4c27; /* Dark green for text */
+    color: #437e94; /* Dark green for text */
 }
 
 /* Login and New User Styles */
 .login, .New-User {
     width: 400px;
-    background-color: #3b6e37; /* Minecraft dirt block brown */
-    border: 5px solid #5d8c4a; /* Grass block green border */
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: #7598d2; /* Minecraft dirt block brown */
+    border: 5px solid #272970; /* Grass block green border */
+    box-shadow: 0 0 10px rgb(68 34 34 / 50%);
     margin: 100px auto;
     border-radius: 0; /* Blocky look */
 }
 
 .login h1, .New-User h1 {
     text-align: center;
-    color: #d4e157; /* Yellow-green text for headers */
+    color: #202dd3; /* Yellow-green text for headers */
     font-size: 24px;
     padding: 20px 0;
-    border-bottom: 3px solid #5d8c4a; /* Grass block border */
+    border-bottom: 3px solid #5553d1; /* Grass block border */
 }
 
 .login .links, .New-User .links {
     display: flex;
     justify-content: space-around;
     padding: 15px;
-    background-color: #5d8c4a;
-    border-top: 3px solid #3b6e37;
+    background-color: #202dd3;
+    border-top: 3px solid #02042c;
 }
 
 .login .links a, .New-User .links a {
-    color: #d4e157;
+    color: #dfdee8;
     text-decoration: none;
     font-weight: bold;
-    text-shadow: 2px 2px 0 #2e4c27;
+    text-shadow: 2px 2px 0 #090908;
 }
 
 .login .links a:hover, .New-User .links a:hover {
-    color: #f1ff87; /* Brighter hover */
+    color: #4b4782; /* Brighter hover */
 }
 
 .login form, .New-User form {
@@ -72,10 +72,10 @@ body {
     align-items: center;
     width: 50px;
     height: 50px;
-    background-color: #5d8c4a; /* Blocky green */
+    background-color: #3a3492; /* Blocky green */
     color: #ffffff;
     margin-bottom: 10px;
-    border: 3px solid #3b6e37;
+    border: 3px solid #b8bbf1;
     border-radius: 4px; /* Small rounding */
 }
 
@@ -98,25 +98,25 @@ body {
     width: 100%;
     padding: 15px;
     margin-top: 20px;
-    background-color: #d4e157; /* Minecraft green */
-    border: 3px solid #5d8c4a;
+    background-color: #202dd3; /* Minecraft green */
+    border: 3px solid #a6a4d8;
     cursor: pointer;
     font-weight: bold;
-    color: #3b6e37;
-    text-shadow: 2px 2px 0 #2e4c27;
+    color: #e7eaef;
+    text-shadow: 2px 2px 0 #08097a;
     transition: background-color 0.3s ease;
 }
 
 .login form input[type="submit"]:hover, .New-User form input[type="submit"]:hover {
-    background-color: #f1ff87;
+    background-color: #633ee5;
 }
 
 /* Navigation Bar */
 .navtop {
-    background-color: #3b6e37; /* Brown dirt block */
+    background-color: #202dd3; /* Brown dirt block */
     height: 60px;
     width: 100%;
-    border-bottom: 3px solid #5d8c4a;
+    border-bottom: 3px solid #676297;
 }
 
 .navtop div {
@@ -130,25 +130,25 @@ body {
 
 .navtop div h1 {
     font-size: 24px;
-    color: #d4e157;
+    color: #209dd3;
     margin: 0;
     text-shadow: 2px 2px 0 #2e4c27;
 }
 
 .navtop div a {
-    color: #d4e157;
+    color: #209dd3;
     text-decoration: none;
     font-weight: bold;
 }
 
 .navtop div a:hover {
-    color: #f1ff87;
+    color: #a1a3e7;
 }
 
 /* Buttons for Game Modes */
 .number-game-btn, .rhythm-game-btn {
-    background-color: #5d8c4a;
-    color: #ffffff;
+    background-color: #537d42;
+    color: #b52525;
     border: 3px solid #3b6e37;
     padding: 15px 25px;
     font-family: 'Press Start 2P', cursive;
@@ -160,7 +160,7 @@ body {
 }
 
 .number-game-btn:hover, .rhythm-game-btn:hover {
-    background-color: #f1ff87;
+    background-color: #859032;
     color: #3b6e37;
 }
 
@@ -169,7 +169,7 @@ body {
     width: 1000px;
     margin: 20px auto;
     background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
-    border: 3px solid #5d8c4a;
+    border: 3px solid #657aa2;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
@@ -178,7 +178,7 @@ body {
     color: #3a7ca5;
     text-shadow: 2px 2px 0 #2e4c27;
     font-size: 22px;
-    border-bottom: 3px solid #5d8c4a;
+    border-bottom: 3px solid #5e5a83;
     padding-bottom: 10px;
 }
 /* cyrillic-ext */
@@ -226,7 +226,6 @@ body {
     src: url(https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
   }
-
 
 
 
