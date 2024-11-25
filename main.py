@@ -172,12 +172,20 @@ def select_game_mode():
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
         elif game_mode == 'rhythm':
             return redirect(url_for('rhythm_game')) # redirect to rhythm game
+        elif game_mode == 'more_info':
+            return redirect(url_for('instructions'))
         else:
             # If no game mode is selected, show an error or redirect back
             return redirect(url_for('home'))
 
     # If GET request, render the page to allow user to choose game mode
-    return render_template('select_game_mode.html')
+    #return render_template('select_game_mode.html')
+
+
+#instructions route 
+@app.route('/instructions')
+def instructions():
+    return render_template('instructions.html', game_mode='more_info')
 
 #adding points and highest level to user profile 
 def update_score_in_database(user_id, points, current_level):
