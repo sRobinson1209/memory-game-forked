@@ -1,5 +1,5 @@
 // Data passed from Flask
-const gameData = {{ game_data, tojson }};
+const gameData = { game_data, tojson };
         
 // Prepare data for score percentage pie chart
 const scoreData = {
