@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
 from NumberGame.NumberGameSurvival import set_level_parameters_survival
 from flask_cors import CORS
+from flask import Flask, render_template
 
 # Load environment variables from .env file
 load_dotenv()
@@ -157,6 +158,13 @@ def dashboard():
     if 'loggedin' in session:
         return render_template('dashboard.html', username=session['username'])
     return redirect(url_for('login'))
+# Added game calling data for graphics 
+    game_data = {
+        "Sound": {"score_percentage": 35, "time_played": 120},  # Time in minutes
+        "Rythme": {"score_percentage": 40, "time_played": 150},
+        "Number": {"score_percentage": 25, "time_played": 90},
+    }
+    return render_template('dashboard.html', game_data=game_data)
 
 
 # Game mode selection route
