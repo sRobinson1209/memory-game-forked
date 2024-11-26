@@ -25,7 +25,7 @@ body {
 /* Login and New User Styles */
 .login, .New-User {
     width: 400px;
-    background-color: #7598d2; /* Minecraft dirt block brown */
+    background-color: #d6d87c; /* Minecraft dirt block brown */
     border: 5px solid #272970; /* Grass block green border */
     box-shadow: 0 0 10px rgb(68 34 34 / 50%);
     margin: 100px auto;
@@ -88,7 +88,7 @@ body {
     width: 310px;
     height: 50px;
     background-color: #eaeaea; /* Light gray, like stone */
-    border: 3px solid #5d8c4a;
+    border: 3px solid #ba8c2a;
     margin-bottom: 20px;
     padding: 0 15px;
     font-family: 'Press Start 2P', cursive;
