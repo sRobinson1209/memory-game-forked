@@ -1,0 +1,35 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name = "viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Game Mode</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+
+
+        <h2>Game Instructions:</h2>
+        <h3> Number Game Survival Mode:</h3>
+        <p> Player is shown a sequence of numbers. Player then must try to remember the numbers and enter them in the same order they were shown.
+            If the player enters the numbers incorrectly, then the game will be over, and no points will be awarded. Otherwise the player proceeds through the game.
+            The game will go on infinitely with each sequence of numbers becoming longer and faster. Every 7 levels, the sequence will get longer and longer.
+            The player is also awarded 10 points for each level completed correctly. </p>
+
+        <h3>Number Game Relaxed Mode:</h3>
+        <p> Player is shown a sequence of numbers.Player must try to remember the numbers and enter them in the same order they were shown.
+                If the player enters the numbers incorrectly, they will still have a chance to enter the numbers or skip. The game only ends if the player chooses 
+                to quit the game. The game will go on infinitely with each sequence of numbers becoming longer and faster. 
+                The player will be rewarded 5 points for each level completed.</p>
+
+        <h3>Rhythm Game</h3>
+        <p> The user is given a beat to follow demonstrated by the rippling rings in the circle. Once the white rings are done, green rings are shown which is the same 
+            rhythm as the white rings. Using the spacebar, the player should repeat the rhythm as closley as possible.</p>
+
+    </div>
+
+
+</body>
+</html>
+
