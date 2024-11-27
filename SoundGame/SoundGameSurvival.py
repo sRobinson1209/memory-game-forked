@@ -53,10 +53,3 @@ def check_user_input():
             return False
 
     return True
-
-def update_global_variables():
-
-    global score
-    global level
-    score += 2
-    level += 1

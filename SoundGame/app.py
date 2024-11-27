@@ -12,10 +12,17 @@ socketio = SocketIO(app)
 
 letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 is_playing = False
+game_running = False
 level = 0
 score = 0
 current_speed = 1000 #default 1 second
 current_length = 3
+
+'''
+WHEN GAME OVER, FIX THE QUIT BUTTON 
+ALSO EVERYTHING SHOULD REST
+
+'''
 
 @app.route('/')
 def melody_memory():
@@ -30,8 +37,28 @@ def handle_play_midi(data):
 
 @app.route('/start_melody', methods=['POST'])
 def start_melody():
-    socketio.start_background_task(play_random_midi_files)  # Run melody playback in a background task
+    global game_running
+    if not game_running:
+        game_running = True
+        socketio.start_background_task(play_random_midi_files)  # start the melody task
     return jsonify({'message': 'Melody started!'})
+
+# Listen for the 'quit_game' event from the frontend
+@socketio.on('quit_game')
+def handle_quit_game():
+    global is_playing
+    global game_running
+    global current_length
+    global current_speed
+    global score
+    global level
+    is_playing = False  # stop any melody playing
+    game_running = False  # mark the game as not running
+    current_length = 3
+    current_speed = 1000
+    print('Game has been quit by the user.')
+    score = 0
+    level = 0
 
 @app.route('/get_letters', methods=['GET'])
 def get_letters():
@@ -55,12 +82,12 @@ def calculate_parameters():
     global current_length
     global score
 
-    #every 5th level increase speed
-    if level != 0 and level % 5 == 0:
+    #every 2nd level increase speed
+    if level != 0 and level % 2 == 0:
         current_speed = current_speed - 300
         score +=  2
     
-    #every 10th level inc length and dec speed by a little (so game isn't impossible)
+    #every 3rd level inc length and dec speed by a little (so game isn't impossible)
     if level != 0 and level % 3 == 0:
 
         if current_length < 8: #make sure notes don't go out of octive range
@@ -125,7 +152,7 @@ def move_on_or_game_over():
     print(f"User input has been checked: {checked_user_input}")
 
     if checked_user_input:
-        #update_global_variables()
+        
         score += 2
         level += 1
         print("User input was correct!")
@@ -134,15 +161,15 @@ def move_on_or_game_over():
     
     else:
         print("User input was incorrect!")
+        global game_running
+        game_running = False
         socketio.emit('game_over', {'level': level, 'score': score})  # Notify frontend that the game is over
-        
         return f"Game Over!\nLevel: {level}\nScore: {score}"
 
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
 
-
 '''
-NEED TO MAKE SURE THE GLOBAL VARIABLES UPDATE!!!    
+TRY TO ADD UNIT TESTS!
 '''

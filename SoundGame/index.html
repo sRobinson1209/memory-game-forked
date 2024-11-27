@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Melody Memory Game</title>
+    <title>Melody Memory Game Survival Mode</title>
 
     <style>
         .square {
@@ -27,27 +27,63 @@
 </head>
 
 <body>
-    <h1>Melody Memory</h1>
+    <h1>Melody Memory Survival Mode</h1>
     <p>Instructions: Recite the melody to win!</p>
 
-    <button type="button" onclick="startGame()">Start</button>
+    <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
     <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
     <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
 
-    <div id="squareContainer"></div> <!-- Div to hold squares -->
+    <div id="squareContainer"></div> 
+
+    <!--displayed when game is quit-->
+    <div id="endMessage" style="display:none;">
+        <p>Thanks for playing!</p>
+    </div>
 
     <script>
-        const socket = io(); // Initialize SocketIO connection
-        let listeningMode = false; // Toggle for listening mode
-        let recordedKeys = []; // Store pressed keys
+        const socket = io(); //SocketIO connection
+        let gameRunning = false; //track game state
+        let listeningMode = false; //toggle for listening mode
+        let recordedKeys = []; //store pressed keys
+
+        function toggleGame() {
+            if (!gameRunning) {
+                startGame(); //start the game
+            } else {
+                quitGame(); //quit the game
+            }
+        }
 
         function startGame() {
-        const squareContainer = document.getElementById('squareContainer');
-        squareContainer.innerHTML = ''; // Clear existing squares
-        drawSquares(squareContainer);
+            //hide the end message
+            document.getElementById('endMessage').style.display = 'none';
+            gameRunning = true;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Quit"; //change button text to "Quit"
+            
+            const squareContainer = document.getElementById('squareContainer');
+            squareContainer.innerHTML = ''; //clear existing squares
+            drawSquares(squareContainer);
 
-        startMelody();
-    }
+            startMelody(); //start the melody
+        }
+
+        function quitGame() {
+            gameRunning = false;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Start"; //change button text to "Start"
+
+            // Hide listening and stop buttons
+            document.getElementById('listenButton').style.display = 'none';
+            document.getElementById('stopButton').style.display = 'none';
+
+            // Send a stop signal to the backend if needed
+            socket.emit('quit_game'); //notify the backend
+
+            // Show the end message
+            document.getElementById('endMessage').style.display = 'block';
+        }
 
     function startMelody() {
         // Send a POST request to trigger melody generation
@@ -104,16 +140,17 @@
                 container.appendChild(square);
             });
         }
-
+        
         function handleKeyPress(event) {
             if (!listeningMode) return;
 
             const key = event.key.toLowerCase();
             const square = document.getElementById(`square-${key}`);
-            if (square && !recordedKeys.includes(key)) {
-                recordedKeys.push(key); // Record the pressed key
-                square.classList.add('red'); // Turn square red
-                playMidiForKey(key); // Play the corresponding MIDI file
+            
+            if (square) {
+                recordedKeys.push(key); // Record the pressed key (even if it's pressed multiple times)
+                square.classList.add('red'); // Turn the square red
+                playMidiForKey(key); // Play the corresponding MIDI file every time the key is pressed
             }
         }
 
@@ -123,7 +160,7 @@
             const key = event.key.toLowerCase();
             const square = document.getElementById(`square-${key}`);
             if (square) {
-                square.classList.remove('red'); // Revert square color
+                square.classList.remove('red'); // Revert square color when the key is released
             }
         }
 
@@ -177,3 +214,4 @@
     </script>
 </body>
 </html>
+
