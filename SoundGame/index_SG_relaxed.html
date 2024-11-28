@@ -7,9 +7,12 @@
     <title>Melody Memory Game Relaxed Mode</title>
 
     <style>
+
+        /*DON'T PUT POSITION TO ABSOLUTE OR ELSE IT MOVES!!!
+        FIX THE SPACING OF EVERYTING*/
         body {
             font-family: Arial, sans-serif;
-            background:  #fbdfab;
+            background:  #ffd27e;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -20,23 +23,21 @@
         .game-container {
             width: 1000px;
             height: 500px;
-            background-color: #ffd27e;  /* A nice green background */
+            background-color:#f3be5d;
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            border-radius: 10px;  /* Rounded corners */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);  /* Add shadow for a floating effect */
             text-align: center;
             color: white;
         }
 
         .title-container {
             position: absolute;
-            top:270px;
-            color: white;
+            top:10px;
+            color: rgb(0, 0, 0);
             font-size: 1rem;
-            
         }
 
         #startQuitButton {
@@ -44,7 +45,7 @@
             color: white;  
             border: none;  
             position: absolute;
-            top: 600px;
+            top: 350px;
             border-radius: 8px; 
             padding: 12px 24px;  /* Space inside the button */
             font-size: 16px;  
@@ -60,8 +61,8 @@
             color: white;  
             border: none;  
             position: absolute;
-            top: 600px;
-            left: 550px;
+            top: 350px;
+            left: 200px;
             border-radius: 8px; 
             padding: 12px 24px;  /* Space inside the button */
             font-size: 16px;  
@@ -77,8 +78,8 @@
             color: white;  
             border: none;  
             position: absolute;
-            top: 600px;
-            left: 550px;
+            top: 350px;
+            left: 200px;
             border-radius: 8px; 
             padding: 12px 24px;  /* Space inside the button */
             font-size: 16px;  
@@ -89,12 +90,23 @@
             transition: background-color 0.3s ease, transform 0.2s ease;  
         }
 
+        
+
+        #messageText {
+            font-size: 24px;  /* Keep larger font size */
+            font-weight: bold;  /* Keep bold text */
+            color: #000000;  /* Red text to match the container */
+            position: absolute;
+            top: 130px;
+            left: 400px;
+        }
+
         #tryAgainButton {
             background-color: #9fbd5c; 
             color: white;  
             border: none;  
             position: absolute;
-            top: 600px;
+            top: 350px;
             left: 600px;
             border-radius: 8px; 
             padding: 12px 24px;  /* Space inside the button */
@@ -111,8 +123,8 @@
             color: white;  
             border: none;  
             position: absolute;
-            top: 600px;
-            left: 1000px;
+            top: 350px;
+            left: 300px;
             border-radius: 8px; 
             padding: 12px 24px;  /* Space inside the button */
             font-size: 16px;  
@@ -123,20 +135,32 @@
             transition: background-color 0.3s ease, transform 0.2s ease;  
         }
 
+        #endMessage {
+            font-size: 24px;  /* Keep larger font size */
+            font-weight: bold;  /* Keep bold text */
+            color: #000000;  /* Red text to match the container */
+            position: absolute;
+            top: 130px;
+            left: 400px;
+
+        }
+
         
         .square {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
+            display: inline-flex;
+            width: 100px;
+            height: 100px;
             margin: 10px;
-            background-color: rgb(255, 255, 255);
-            text-align: center;
+            background-color: rgb(238, 237, 234);
+            text-align:center;
             line-height: 50px;
-            font-size: 18px;
-            color: rgb(232, 182, 43);
+            font-size: 25px;
+            color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
         }
         .square.blue {
-            background-color: blue;
+            background-color: rgb(104, 186, 248);
         }
     </style>
 
