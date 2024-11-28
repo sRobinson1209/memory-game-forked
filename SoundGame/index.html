@@ -7,19 +7,111 @@
     <title>Melody Memory Game Survival Mode</title>
 
     <style>
-        .square {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            margin: 10px;
-            background-color: gray;
+        body {
+            font-family: Arial, sans-serif;
+            background:  #9f3eac;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            width: 1000px;
+            height: 500px;
+            background-color:rgb(197, 110, 209);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            line-height: 50px;
-            font-size: 18px;
             color: white;
         }
+
+        .title-container {
+            position: absolute;
+            top:10px;
+            color: rgb(0, 0, 0);
+            font-size: 1rem;
+        }
+
+        #startQuitButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            border-radius: 8px; 
+            padding: 12px 24px;  /* Space inside the button */
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #listenButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 200px;
+            border-radius: 8px; 
+            padding: 12px 24px;  /* Space inside the button */
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #stopButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 200px;
+            border-radius: 8px; 
+            padding: 12px 24px;  /* Space inside the button */
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #endMessage {
+            font-size: 24px;  /* Keep larger font size */
+            font-weight: bold;  /* Keep bold text */
+            color: #000000;  /* Red text to match the container */
+            position: absolute;
+            top: 130px;
+            left: 400px;
+
+        }
+
+        .square {
+            display: inline-flex;
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            background-color: rgb(232, 196, 230);
+            text-align:center;
+            line-height: 50px;
+            font-size: 25px;
+            color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
+        }
         .square.red {
-            background-color: red;
+            background-color: rgb(231, 173, 67);
         }
     </style>
 
@@ -27,19 +119,30 @@
 </head>
 
 <body>
-    <h1>Melody Memory Survival Mode</h1>
-    <p>Instructions: Recite the melody to win!</p>
 
-    <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
-    <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
-    <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
+    <div class="game-container">
 
-    <div id="squareContainer"></div> 
+        <div class="title-container">
+            <h1>Melody Memory Survival Mode</h1>
+            <p>Instructions: Recite the melody to win!</p>
+        </div>
 
-    <!--displayed when game is quit-->
-    <div id="endMessage" style="display:none;">
-        <p>Thanks for playing!</p>
+        <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
+        <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
+        <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
+
+        <div id="squareContainer"></div> 
+
+         <!--displayed when game is quit-->
+        <div id="endMessage" style="display:none;">
+            <p>Thanks for playing!</p>
+        </div>
+
     </div>
+
+    
+
+   
 
     <script>
         const socket = io(); //SocketIO connection
