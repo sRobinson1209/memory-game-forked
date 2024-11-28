@@ -20,7 +20,8 @@ current_length = 3
 
 '''
 WHEN GAME OVER, FIX THE QUIT BUTTON 
-ALSO EVERYTHING SHOULD REST
+fix when the buttons are pressable or not
+make it pretty
 
 '''
 

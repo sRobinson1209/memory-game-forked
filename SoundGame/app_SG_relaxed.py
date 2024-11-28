@@ -1,4 +1,4 @@
-from flask import Flask, send_file, jsonify, request
+from flask import Flask, send_file, jsonify, request, render_template
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 import random
@@ -10,10 +10,13 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
 
+
+
 '''
 
-EVERYTING SHOULD RESIT
-FIX PASS TO PLAY MELODY
+
+fix when the buttons are pressable or not
+make it pretty
 
 '''
 
@@ -24,9 +27,13 @@ level = 0
 current_speed = 1000 #default 1 second
 current_length = 3
 
+
+
 @app.route('/')
 def melody_memory():
     return send_file('index_SG_relaxed.html')
+
+
 
 @socketio.on('play_midi')
 def handle_play_midi(data):
