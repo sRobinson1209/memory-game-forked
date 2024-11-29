@@ -1,161 +1,176 @@
-'''
-app.py handles setting up the Flask Backend
-
-Flask is used to serve the game logic & handle communication between Python backend & thre frontend (js file)
-
-Here there are API routes to handle the game logic (generating a melody and recieving the user's input)
-
-Basically Separting backedn logic from frontent logic 
-- front end interacts with UI
-- back end is the python file that has the game in it
-'''
-
-from flask import Flask, jsonify, request
+from flask import Flask, send_file, jsonify, request
 from flask_cors import CORS
-import pretty_midi
+from flask_socketio import SocketIO, emit
 import random
-import pygame
-import os
 import time
+import pygame
 
+from SoundGameSurvival import letters_and_files_dict, get_midi_files, get_user_input, check_user_input
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app)
 
-# Globals and game state initialization
-current_instrument = 'Acoustic Grand Piano'
-current_key = 'c'
-current_key_scale = [60, 62, 64, 65, 67, 69, 71, 72]
-random_seq = []
-current_speed = 1
-current_length = 3
+letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
+is_playing = False
+game_running = False
 level = 0
 score = 0
-MIDI_FILE_PATH = 'generated_melody.mid'
+current_speed = 1000 #default 1 second
+current_length = 3
 
-#generates a new key
-def generate_new_key():
+'''
+WHEN GAME OVER, FIX THE QUIT BUTTON 
+fix when the buttons are pressable or not
+make it pretty
 
-    global current_key, current_key_scale
-    key_dictionary = {
-        "c": [60, 62, 64, 65, 67, 69, 71, 72],
-        "d": [62, 64, 66, 67, 69, 71, 73, 74],
-        "e": [64, 66, 68, 69, 71, 73, 75, 76],
-        "f": [65, 67, 69, 70, 72, 74, 76, 77],
-        "g": [55, 57, 59, 60, 62, 64, 66, 67],
-        "a": [57, 59, 61, 62, 64, 66, 68, 69],
-        "b": [59, 61, 63, 64, 66, 68, 70, 71]
-    }
+'''
+
+@app.route('/')
+def melody_memory():
+    return send_file('index.html')
+
+@socketio.on('play_midi')
+def handle_play_midi(data):
+    midi_file = data['midiFile']
+    pygame.mixer.init()
+    pygame.mixer.music.load(midi_file)
+    pygame.mixer.music.play()
+
+@app.route('/start_melody', methods=['POST'])
+def start_melody():
+    global game_running
+    if not game_running:
+        game_running = True
+        socketio.start_background_task(play_random_midi_files)  # start the melody task
+    return jsonify({'message': 'Melody started!'})
+
+# Listen for the 'quit_game' event from the frontend
+@socketio.on('quit_game')
+def handle_quit_game():
+    global is_playing
+    global game_running
+    global current_length
+    global current_speed
+    global score
+    global level
+    is_playing = False  # stop any melody playing
+    game_running = False  # mark the game as not running
+    current_length = 3
+    current_speed = 1000
+    print('Game has been quit by the user.')
+    score = 0
+    level = 0
+
+@app.route('/get_letters', methods=['GET'])
+def get_letters():
+    return jsonify({'letters': letters})
+
+@app.route('/user_input', methods=['POST'])
+def receive_user_input():
+    user_input = request.json.get('userInput', [])
+    # Call the get_user_input function from SoundGameSurvival.py
+    get_user_input(user_input)
+    message = move_on_or_game_over()
     
-    #cycle through keys
-    current_key_index = list(key_dictionary).index(current_key)
-
-    try:
-        current_key = list(key_dictionary)[current_key_index + 1]
-
-    except IndexError:
-        current_key = "c"  #reset to "c" if at end
-
-    current_key_scale = key_dictionary[current_key]
-
-
-#generates a new instrument
-def generate_new_instrument():
-
-    global current_instrument
-    instruments = ['Acoustic Grand Piano', 'Rock Organ', 'Music Box', 'Flute', 'Choir Aahs', 'Violin', 'Trumpet', 'Bassoon', 'Cello']
-    try:
-        current_instrument = instruments[(instruments.index(current_instrument) + 1) % len(instruments)]
-    except ValueError:
-        current_instrument = 'Acoustic Grand Piano'
-
+    return jsonify({'message': message})
 
 #calculates the parameters based on the level the user is on
 def calculate_parameters():
+    print("Called calculate_parameters!")
     
     global level
     global current_speed
     global current_length
     global score
 
-    #every 5th level increase speed
-    if level != 0 and level % 5 == 0:
-        current_speed = current_speed - 0.09
+    #every 2nd level increase speed
+    if level != 0 and level % 2 == 0:
+        current_speed = current_speed - 300
         score +=  2
     
-    #every 10th level inc length and dec speed by a little (so game isn't impossible)
-    if level != 0 and level % 10 == 0:
+    #every 3rd level inc length and dec speed by a little (so game isn't impossible)
+    if level != 0 and level % 3 == 0:
 
         if current_length < 8: #make sure notes don't go out of octive range
             current_length = current_length + 1
 
-        current_speed = current_speed + 0.02
+        current_speed = current_speed + 20
         score += 3
-
-    #every 7th level change key
-    if level != 0 and level % 7 == 0:
-        generate_new_key()
-        
-        
-    #every 15th level change instrument
-    if level != 0 and level % 15 == 0:
-        generate_new_instrument()
+    
+    print(f"Current Level: {level}\nCurrent Score: {score}\nCurrent Speed: {current_speed}\nCurrent Length: {current_length}")
 
 
-#generates the melody
-@app.route('/generate_melody', methods=['GET'])
-def generate_melody():
-    global random_seq, current_key_scale, current_instrument, current_length, current_speed, score, level, MIDI_FILE_PATH
-    calculate_parameters()
+def play_random_midi_files():
+    global is_playing
 
-    if current_length > len(current_key_scale):
-        return jsonify({'error': 'Length cannot be greater than the scale size'}), 400
+    if is_playing:
+        return  # Prevent starting a new melody while one is still playing
 
-    midi = pretty_midi.PrettyMIDI()
-    sound_program = pretty_midi.instrument_name_to_program(current_instrument)
-    instr = pretty_midi.Instrument(program=sound_program)
+    is_playing = True  # Set the flag to True when melody starts
 
-    random_seq = random.sample(current_key_scale[:current_length], current_length)
+    calculate_parameters() #called from backend
 
-    for i, note_num in enumerate(random_seq):
-        start_time = i * current_speed
-        end_time = (i + 1) * current_speed
-        note = pretty_midi.Note(velocity=100, pitch=note_num, start=start_time, end=end_time)
-        instr.notes.append(note)
+    global current_length
+    global current_speed
+    global letters_and_files_dict
 
-    midi.instruments.append(instr)
-    midi.write(MIDI_FILE_PATH)
+    #check length is not greater than the available file paths
+    if current_length > len(letters_and_files_dict):
+        raise ValueError("Length cannot be greater than the number of available file paths.")
 
-    level += 1
-    score += 2
+    midi_files = random.sample(list(letters_and_files_dict.keys()), current_length) #selects random MIDI files to play
+    get_midi_files(midi_files) #return random midi files to backend
 
-    return jsonify({
-        'melody': random_seq,
-        'level': level,
-        'score': score,
-        'instrument': current_instrument,
-        'key': current_key,
-        'speed': current_speed
-    })
-
-#endpoint to play the generated melody
-@app.route('/play_melody', methods=['GET'])
-def play_melody():
-    if os.path.exists(MIDI_FILE_PATH):
-        play_sound(MIDI_FILE_PATH)
-        return jsonify({'status': 'playing'}), 200
-    else:
-        return jsonify({'error': 'No melody file found'}), 400
-
-
-#plays a MIDI file
-def play_sound(midi_file):
     pygame.mixer.init()
-    pygame.mixer.music.load(midi_file)
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        time.sleep(1)
+
+    # Stop any currently playing sound and clear the queue
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.stop()  # Stop any currently playing MIDI
+        pygame.mixer.music.unload()  # Unload the previous music to avoid overlap
 
 
-#run the Flask app
+    for midi_file in midi_files:
+        letter = letters_and_files_dict[midi_file]
+        
+        socketio.emit('highlight_square', {'letter': letter}) #emit an event to the front end to turn the corresponding square red
+        pygame.mixer.music.load(midi_file)
+        pygame.mixer.music.play()
+        pygame.time.wait(current_speed) #wait for the length of the sound (simulate the time the note is playing)
+        socketio.emit('reset_square', {'letter': letter}) #emit an event to the front end to turn the square back to grey
+        time.sleep(0.1)  #delay between notes 
+
+    socketio.emit('melody_finished')
+    print('Finished playing all selected MIDI files.')
+    is_playing = False  # Reset the flag when done
+    
+def move_on_or_game_over():
+    print("Calling move_on_or_game_over function!")
+    checked_user_input = check_user_input()
+
+    global score
+    global level
+
+    print(f"User input has been checked: {checked_user_input}")
+
+    if checked_user_input:
+        
+        score += 2
+        level += 1
+        print("User input was correct!")
+        socketio.emit('next_round')  # Notify frontend to proceed to the next round
+        return play_random_midi_files()
+    
+    else:
+        print("User input was incorrect!")
+        global game_running
+        game_running = False
+        socketio.emit('game_over', {'level': level, 'score': score})  # Notify frontend that the game is over
+        return f"Game Over!\nLevel: {level}\nScore: {score}"
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
+
+'''
+TRY TO ADD UNIT TESTS!
+'''
