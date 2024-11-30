@@ -18,12 +18,6 @@ score = 0
 current_speed = 1000 #default 1 second
 current_length = 3
 
-'''
-WHEN GAME OVER, FIX THE QUIT BUTTON 
-fix when the buttons are pressable or not
-make it pretty
-
-'''
 
 @app.route('/')
 def melody_memory():

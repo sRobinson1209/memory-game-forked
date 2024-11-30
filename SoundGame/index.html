@@ -133,16 +133,18 @@
 
         <div id="squareContainer"></div> 
 
+        <!--displayed when game is over-->
+        <div id="gameOverMessage" style="display:none; position:absolute; top:200px; left:50px; right:50px; text-align:center;">
+            <h2>Game Over!</h2>
+            <p id="gameOverText"></p>
+        </div>
+
          <!--displayed when game is quit-->
         <div id="endMessage" style="display:none;">
             <p>Thanks for playing!</p>
         </div>
 
     </div>
-
-    
-
-   
 
     <script>
         const socket = io(); //SocketIO connection
@@ -159,6 +161,10 @@
         }
 
         function startGame() {
+
+            //hide the "Game Over" message when restarting
+            document.getElementById('gameOverMessage').style.display = 'none';
+
             //hide the end message
             document.getElementById('endMessage').style.display = 'none';
             gameRunning = true;
@@ -167,6 +173,7 @@
             
             const squareContainer = document.getElementById('squareContainer');
             squareContainer.innerHTML = ''; //clear existing squares
+            squareContainer.style.display = 'block'; // Ensure the square container is visible
             drawSquares(squareContainer);
 
             startMelody(); //start the melody
@@ -180,6 +187,7 @@
             // Hide listening and stop buttons
             document.getElementById('listenButton').style.display = 'none';
             document.getElementById('stopButton').style.display = 'none';
+            document.getElementById('squareContainer').style.display = 'none';
 
             // Send a stop signal to the backend if needed
             socket.emit('quit_game'); //notify the backend
@@ -309,9 +317,34 @@
     });
 
     // Handle game over
+    // socket.on('game_over', function(data) {
+    //     const { level, score } = data;
+    //     alert(`Game Over!\nLevel: ${level}\nScore: ${score}`);
+    // });
+
+    //handle game over
     socket.on('game_over', function(data) {
         const { level, score } = data;
-        alert(`Game Over!\nLevel: ${level}\nScore: ${score}`);
+        
+        //hide buttons and square container
+        document.getElementById('squareContainer').style.display = 'none';
+        document.getElementById('listenButton').style.display = 'none';
+        document.getElementById('stopButton').style.display = 'none';
+
+        //update the Game Over text
+        const gameOverText = document.getElementById('gameOverText');
+        gameOverText.innerHTML = `You reached level: ${level}<br>Your score: ${score}`;
+
+        //show Game Over message
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        gameOverMessage.style.display = 'block';
+
+        //update the start button to say "Restart"
+        const startQuitButton = document.getElementById('startQuitButton');
+        startQuitButton.innerText = "Restart";
+        gameRunning = false;  //mark game as not running
+        // Send a stop signal to the backend if needed
+        socket.emit('quit_game'); //notify the backend
     });
 
     </script>
