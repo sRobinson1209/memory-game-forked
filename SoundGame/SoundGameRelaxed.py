@@ -1,4 +1,8 @@
-
+'''
+=======================
+SOUND GAME RELAXED MODE
+=======================
+'''
 
 current_midi_files = []
 current_user_input = []
@@ -22,7 +26,7 @@ def get_user_input(user_input):
     global current_user_input 
     current_user_input = user_input
     
-
+#checkes the user input against the random midi file sequence
 def check_user_input():
     print("Checking user input!")
     global letters_and_files_dict

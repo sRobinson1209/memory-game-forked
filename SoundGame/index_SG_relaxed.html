@@ -1,3 +1,6 @@
+<!--HTML file for the Relaxed Mode of Sound Game.
+Includes styles and script code.-->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -45,7 +48,7 @@
             position: absolute;
             top: 350px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px;  
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -62,7 +65,7 @@
             top: 350px;
             left: 200px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px;  
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -79,7 +82,7 @@
             top: 350px;
             left: 200px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px;  
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -88,12 +91,10 @@
             transition: background-color 0.3s ease, transform 0.2s ease;  
         }
 
-        
-
         #messageText {
-            font-size: 24px;  /* Keep larger font size */
-            font-weight: bold;  /* Keep bold text */
-            color: #000000;  /* Red text to match the container */
+            font-size: 24px;  
+            font-weight: bold;  
+            color: #000000;  
             position: absolute;
             top: 130px;
             left: 400px;
@@ -107,7 +108,7 @@
             top: 350px;
             left: 600px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px;  
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -124,7 +125,7 @@
             top: 350px;
             left: 300px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px; 
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -134,16 +135,15 @@
         }
 
         #endMessage {
-            font-size: 24px;  /* Keep larger font size */
-            font-weight: bold;  /* Keep bold text */
-            color: #000000;  /* Red text to match the container */
+            font-size: 24px;  
+            font-weight: bold;  
+            color: #000000;  
             position: absolute;
             top: 130px;
             left: 400px;
 
         }
 
-        
         .square {
             display: inline-flex;
             width: 100px;
@@ -164,7 +164,6 @@
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
    
-
 </head>
 
 <body>
@@ -176,12 +175,9 @@
             <p>Instructions: Recite the melody to win!</p>
         </div>
         
-       
         <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
         <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
         <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
-        
-        
 
         <div id="squareContainer"></div> 
 
@@ -199,240 +195,234 @@
         
     </div>
 
-    
-
-    
 
     <script>
 
+        const socket = io(); //SocketIO connection
+        let gameRunning = false; //track game state
+        let listeningMode = false; //toggle for listening mode
+        let recordedKeys = []; //store pressed keys
 
-const socket = io(); //SocketIO connection
-let gameRunning = false; //track game state
-let listeningMode = false; //toggle for listening mode
-let recordedKeys = []; //store pressed keys
+        function toggleGame() {
+            if (!gameRunning) {
+                startGame(); //start the game
+            } else {
+                quitGame(); //quit the game
+            }
+        }
 
-function toggleGame() {
-    if (!gameRunning) {
-        startGame(); //start the game
-    } else {
-        quitGame(); //quit the game
-    }
-}
+        function startGame() {
 
+            //hide the end message
+            document.getElementById('endMessage').style.display = 'none';
+            gameRunning = true;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Quit"; //change button text to "Quit"
+            
+            const squareContainer = document.getElementById('squareContainer');
+            squareContainer.innerHTML = ''; //clear existing squares
+            drawSquares(squareContainer);
 
-function startGame() {
+            startMelody(); //start the melody
+        }
 
-    //hide the end message
-    document.getElementById('endMessage').style.display = 'none';
-    gameRunning = true;
-    const startQuitButton = document.getElementById('startQuitButton');
-    startQuitButton.innerText = "Quit"; //change button text to "Quit"
-    
-    const squareContainer = document.getElementById('squareContainer');
-    squareContainer.innerHTML = ''; //clear existing squares
-    drawSquares(squareContainer);
+        function quitGame() {
+            gameRunning = false;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Start"; //change button text to "Start"
 
-    startMelody(); //start the melody
-}
+            //hide listening and stop buttons
+            document.getElementById('listenButton').style.display = 'none';
+            document.getElementById('stopButton').style.display = 'none';
 
-function quitGame() {
-    gameRunning = false;
-    const startQuitButton = document.getElementById('startQuitButton');
-    startQuitButton.innerText = "Start"; //change button text to "Start"
+            // send a stop signal to the backend 
+            socket.emit('quit_game'); 
 
-    // Hide listening and stop buttons
-    document.getElementById('listenButton').style.display = 'none';
-    document.getElementById('stopButton').style.display = 'none';
+            //show the end message
+            document.getElementById('endMessage').style.display = 'block';
 
-    // Send a stop signal to the backend if needed
-    socket.emit('quit_game'); //notify the backend
+            //hide the message and buttons
+            document.getElementById('messageContainer').style.display = 'none';
+        }
 
-    // Show the end message
-    document.getElementById('endMessage').style.display = 'block';
+        function startMelody() {
+        //send POST request to trigger melody generation
+        fetch('/start_melody', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message (if needed)
+            document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
+        })
+        .catch(error => console.error('Error:', error));
+        }
 
-     // Hide the message and buttons
-    document.getElementById('messageContainer').style.display = 'none';
-}
+        function startListening() {
+            listeningMode = true; //enable listening mode
+            recordedKeys = []; //clear recorded keys from any previous session
 
-function startMelody() {
-//send POST request to trigger melody generation
-fetch('/start_melody', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    }
-})
-.then(response => response.json())
-.then(data => {
-    console.log(data.message); //display message (if needed)
-    document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
-})
-.catch(error => console.error('Error:', error));
-}
+            document.addEventListener('keydown', handleKeyPress);
+            document.addEventListener('keyup', handleKeyRelease);
 
-function startListening() {
-    listeningMode = true; //enable listening mode
-    recordedKeys = []; //clear recorded keys from any previous session
-    document.addEventListener('keydown', handleKeyPress);
-    document.addEventListener('keyup', handleKeyRelease);
-    document.getElementById('listenButton').style.display = 'none'; //hide "Start Listening" button
-    document.getElementById('stopButton').style.display = 'inline-block'; //show "Stop Listening" button
-}
+            document.getElementById('listenButton').style.display = 'none'; //hide "Start Listening" button
+            document.getElementById('stopButton').style.display = 'inline-block'; //show "Stop Listening" button
+        }
 
-function stopListening() {
-    listeningMode = false; //disable listening mode
-    document.removeEventListener('keydown', handleKeyPress);
-    document.removeEventListener('keyup', handleKeyRelease);
-    document.getElementById('stopButton').style.display = 'none'; //hide "Stop Listening" button
+        function stopListening() {
+            listeningMode = false; //disable listening mode
+            document.removeEventListener('keydown', handleKeyPress);
+            document.removeEventListener('keyup', handleKeyRelease);
+            document.getElementById('stopButton').style.display = 'none'; //hide "Stop Listening" button
 
-    console.log('Recorded keys:', recordedKeys); //for debugging
-    //send recorded keys to backend
-    fetch('/user_input', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userInput: recordedKeys }) //send keys as JSON
-    })
-    .then(response => response.json())
-    .then(data => console.log(data.message))
-    .catch(error => console.error('Error:', error));
-}
+            console.log('Recorded keys:', recordedKeys); 
+           
+            fetch('/user_input', {  //send recorded keys to backend
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userInput: recordedKeys }) //send keys as JSON
+            })
+            .then(response => response.json())
+            .then(data => console.log(data.message))
+            .catch(error => console.error('Error:', error));
+        }
 
-function drawSquares(container) {
-    const letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
-    letters.forEach(letter => {
-        const square = document.createElement('div');
-        square.classList.add('square');
-        square.setAttribute('id', `square-${letter}`); //give each square a unique ID based on the letter
-        square.innerText = letter;
-        container.appendChild(square);
-    });
-}
+        function drawSquares(container) {
+            const letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
+            letters.forEach(letter => {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                square.setAttribute('id', `square-${letter}`); //give each square a unique ID based on the letter
+                square.innerText = letter;
+                container.appendChild(square);
+            });
+        }
 
-function handleKeyPress(event) {
-    if (!listeningMode) return;
+        function handleKeyPress(event) {
+            if (!listeningMode) return;
 
-    const key = event.key.toLowerCase();
-    const square = document.getElementById(`square-${key}`);
-    
-    if (square) {
-        recordedKeys.push(key); // Record the pressed key (even if it's pressed multiple times)
-        square.classList.add('blue'); // Turn the square blue
-        playMidiForKey(key); // Play the corresponding MIDI file every time the key is pressed
-    }
-}
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            
+            if (square) {
+                recordedKeys.push(key); //record the pressed key 
+                square.classList.add('blue'); //turn the square blue
+                playMidiForKey(key); //play the corresponding MIDI file every time the key is pressed
+            }
+        }
 
-function handleKeyRelease(event) {
-    if (!listeningMode) return;
+        function handleKeyRelease(event) {
+            if (!listeningMode) return;
 
-    const key = event.key.toLowerCase();
-    const square = document.getElementById(`square-${key}`);
-    if (square) {
-        square.classList.remove('blue'); // Revert square color when the key is released
-    }
-}
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            if (square) {
+                square.classList.remove('blue'); //revert square color when the key is released
+            }
+        }
 
-function playMidiForKey(key) {
-    const midiMap = {
-        'a': 'MID_FILES/c_note_one_sec.mid',
-        's': 'MID_FILES/d_note_one_sec.mid',
-        'd': 'MID_FILES/e_note_one_sec.mid',
-        'f': 'MID_FILES/f_note_one_sec.mid',
-        'g': 'MID_FILES/g_note_one_sec.mid',
-        'h': 'MID_FILES/a_note_one_sec.mid',
-        'j': 'MID_FILES/b_note_one_sec.mid',
-        'k': 'MID_FILES/c_oct_note_one_sec.mid'
-    };
+        function playMidiForKey(key) {
+            const midiMap = {
+                'a': 'MID_FILES/c_note_one_sec.mid',
+                's': 'MID_FILES/d_note_one_sec.mid',
+                'd': 'MID_FILES/e_note_one_sec.mid',
+                'f': 'MID_FILES/f_note_one_sec.mid',
+                'g': 'MID_FILES/g_note_one_sec.mid',
+                'h': 'MID_FILES/a_note_one_sec.mid',
+                'j': 'MID_FILES/b_note_one_sec.mid',
+                'k': 'MID_FILES/c_oct_note_one_sec.mid'
+            };
 
-    const midiFile = midiMap[key];
-    if (midiFile) {
-        socket.emit('play_midi', { midiFile: midiFile }); //emit event to server to play MIDI
-    }
-}
+            const midiFile = midiMap[key];
+            if (midiFile) {
+                socket.emit('play_midi', { midiFile: midiFile }); //emit event to server to play MIDI
+            }
+        }
 
-//listen for 'highlight_square' event from the server
-socket.on('highlight_square', function(data) {
-    const letter = data.letter;
-    const square = document.getElementById(`square-${letter}`);
-    if (square) {
-        square.classList.add('blue');
-    }
-});
+        //listen for 'highlight_square' event from the server
+        socket.on('highlight_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.add('blue');
+            }
+        });
 
-//listen for the 'reset_square' event to turn squares back to grey
-socket.on('reset_square', function(data) {
-    const letter = data.letter;
-    const square = document.getElementById(`square-${letter}`);
-    if (square) {
-        square.classList.remove('blue');
-    }
-});
-//automatically move to next round if user input was correct
-socket.on('next_round', function() {
-console.log('User input was correct. Starting next round...');
-startMelody();  //start new round automatically
-});
+        //listen for the 'reset_square' event to turn squares back to grey
+        socket.on('reset_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.remove('blue');
+            }
+        });
+        //automatically move to next round if user input was correct
+        socket.on('next_round', function() {
+        console.log('User input was correct. Starting next round...');
+        startMelody();  //start new round automatically
+        });
 
-//listen for 'input_incorrect' event from server
-socket.on('input_incorrect', function(data) {
-const { level } = data;
-console.log(`Input was incorrect! Level: ${level}`);
+        //listen for 'input_incorrect' event from server
+        socket.on('input_incorrect', function(data) {
+        const { level } = data;
+        console.log(`Input was incorrect! Level: ${level}`);
 
-// Show the message and buttons
-const messageContainer = document.getElementById('messageContainer');
-const messageText = document.getElementById('messageText');
-const tryAgainButton = document.getElementById('tryAgainButton');
-const passButton = document.getElementById('passButton');
+        // Show the message and buttons
+        const messageContainer = document.getElementById('messageContainer');
+        const messageText = document.getElementById('messageText');
+        const tryAgainButton = document.getElementById('tryAgainButton');
+        const passButton = document.getElementById('passButton');
 
-messageText.textContent = 'Input was incorrect!';
-messageContainer.style.display = 'block'; // Show the message container
-tryAgainButton.style.display = 'inline-block'; // Show the Try Again button
-passButton.style.display = 'inline-block'; // Show the Pass button  
-});
+        messageText.textContent = 'Input was incorrect!';
+        messageContainer.style.display = 'block'; //show the message container
+        tryAgainButton.style.display = 'inline-block'; //show the Try Again button
+        passButton.style.display = 'inline-block'; //show the Pass button  
+        });
 
-// Function to handle "Try Again" button click
-function tryAgain() {
-// Hide the message and buttons
-document.getElementById('messageContainer').style.display = 'none';
+        //function to handle "Try Again" button click
+        function tryAgain() {
+        document.getElementById('messageContainer').style.display = 'none'; //hide the message and buttons
 
-// Replay the previous melody using the same random MIDI files
-fetch('/try_melody_again', { 
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    }
-})
-.then(response => response.json())
-.then(data => {
-    console.log(data.message); // Display message (if needed)
+        fetch('/try_melody_again', { //replay the previous melody using the same random MIDI files
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message
 
-    // Show "Start Listening" button so the user can reattempt
-    document.getElementById('listenButton').style.display = 'inline-block';
-})
-.catch(error => console.error('Error:', error));
-}
+            //show "Start Listening" button so the user can reattempt
+            document.getElementById('listenButton').style.display = 'inline-block';
+        })
+        .catch(error => console.error('Error:', error));
+        }
 
 
-// Function to handle "Pass" button click
-function passLevel() {
-// Hide the message and buttons
-document.getElementById('messageContainer').style.display = 'none';
+        //function to handle "Pass" button click
+        function passLevel() {
+        document.getElementById('messageContainer').style.display = 'none'; //hide the message and buttons
 
-// Move to the next round by simulating correct input
-fetch('/pass_level', {  // New route for passing level
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    }
-})
-.then(response => response.json())
-.then(data => {
-    console.log(data.message); // Display message (if needed)
-    document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
-})
-.catch(error => console.error('Error:', error));
-}
+        //move to the next round by simulating correct input
+        fetch('/pass_level', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message 
+            document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
+        })
+        .catch(error => console.error('Error:', error));
+        }
 
     </script>
 </body>
