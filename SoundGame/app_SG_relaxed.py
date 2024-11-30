@@ -1,40 +1,38 @@
-from flask import Flask, send_file, jsonify, request, render_template
+'''
+========================
+RELAXED MODE APP.PY FILE
+=======================
+'''
+from flask import Flask, send_file, jsonify, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import random
 import time
 import pygame
 
 from SoundGameRelaxed import letters_and_files_dict, get_midi_files, get_user_input, check_user_input, send_current_midi_files_back
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
 
-
-
-'''
-
-
-fix when the buttons are pressable or not
-make it pretty
-
-'''
-
-letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
+#Game state variables
 is_playing = False
 game_running = False
+
 level = 0
-current_speed = 1000 #default 1 second
+
+current_speed = 1000 
 current_length = 3
 
+letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 
-
+#route to serve index_SG_relaxed.HTML file
 @app.route('/')
 def melody_memory():
     return send_file('index_SG_relaxed.html')
 
-
-
+#SocketIO event to play specific MIDI file
 @socketio.on('play_midi')
 def handle_play_midi(data):
     midi_file = data['midiFile']
@@ -42,15 +40,16 @@ def handle_play_midi(data):
     pygame.mixer.music.load(midi_file)
     pygame.mixer.music.play()
 
+#HTTP route to start melody playback if the game isn't already running
 @app.route('/start_melody', methods=['POST'])
 def start_melody():
     global game_running
     if not game_running:
         game_running = True
-        socketio.start_background_task(play_random_midi_files)  # start the melody task
+        socketio.start_background_task(play_random_midi_files)  #start melody task
     return jsonify({'message': 'Melody started!'})
 
-# Listen for the 'quit_game' event from the frontend
+#listen for 'quit_game' event from frontend
 @socketio.on('quit_game')
 def handle_quit_game():
     global is_playing
@@ -58,37 +57,39 @@ def handle_quit_game():
     global level
     global current_speed
     global current_length
-    is_playing = False  # stop any melody playing
-    game_running = False  # mark the game as not running
+
+    is_playing = False  
+    game_running = False
+
     level = 0 #reset level
     current_speed = 1000 #reset speed
     current_length = 3 #reset length
+
     print('Game has been quit by the user.')
 
+#HTTP route to send list of available letters to frontend
 @app.route('/get_letters', methods=['GET'])
 def get_letters():
     return jsonify({'letters': letters})
 
+#HTTP route to receive user input and check if it matches the melody
 @app.route('/user_input', methods=['POST'])
 def receive_user_input():
     user_input = request.json.get('userInput', [])
     get_user_input(user_input)
     message = move_on_or_game_over()
-    
     return jsonify({'message': message})
 
+#HTTP route to handle level progression after the user passes a level
 @app.route('/pass_level', methods=['POST'])
 def pass_level():
     global level
-    level += 1  # Increase level as if the user passed the current level
+
+    level += 1  
     print("User passed the level!")
     
-    # Emit event to frontend to inform about the next round
-    socketio.emit('next_round')
-    
-    # Start the next melody sequence by calling the function
-    socketio.start_background_task(play_random_midi_files)
-    
+    socketio.emit('next_round') #emit event to frontend to inform about the next round
+    socketio.start_background_task(play_random_midi_files) #start next melody sequence by calling the function
     return jsonify({'message': 'Moved to the next round!'})
 
 #calculates the parameters based on the level the user is on
@@ -98,25 +99,21 @@ def calculate_parameters():
     global level
     global current_speed
     global current_length
-    #global score
 
     #every 2nd level increase speed
     if level != 0 and level % 2 == 0:
         current_speed = current_speed - 300
-        #score +=  2
     
     #every 3rd level inc length and dec speed by a little (so game isn't impossible)
     if level != 0 and level % 3 == 0:
-
         if current_length < 8: #make sure notes don't go out of octive range
             current_length = current_length + 1
 
         current_speed = current_speed + 20
-        #score += 3
     
     print(f"Current Level: {level}\nCurrent Speed: {current_speed}\nCurrent Length: {current_length}")
 
-
+#play random MIDI files for user to recite
 def play_random_midi_files():
     global is_playing
 
@@ -125,7 +122,7 @@ def play_random_midi_files():
 
     is_playing = True  #set the flag to True when melody starts
 
-    calculate_parameters() #called from backend
+    calculate_parameters()
 
     global current_length
     global current_speed
@@ -160,11 +157,11 @@ def play_random_midi_files():
     print('Finished playing all selected MIDI files.')
     is_playing = False  #reset the flag when done
     
+#function to check if the user input was correct and proceed accordingly
 def move_on_or_game_over():
     print("Calling move_on_or_game_over function!")
     checked_user_input = check_user_input()
 
-   #global score
     global level
 
     print(f"User input has been checked: {checked_user_input}")
@@ -189,14 +186,16 @@ def try_melody_again():
     socketio.start_background_task(try_again)  
     return jsonify({'message': 'Previous melody started!'})
 
-
+#HTTP route to retry last melody after an incorrect input
 def try_again():
     print("Trying again!")
 
     return_midi_files = send_current_midi_files_back()
+
     global is_playing
 
     print(f"Previous MIDI files: {return_midi_files}")
+
     if is_playing:
         return  #prevent starting a new melody while one is still playing
     
@@ -209,9 +208,7 @@ def try_again():
     get_midi_files(return_midi_files) #return previously played midi files to backend
 
     pygame.mixer.init()
-
-    #stop any currently playing sound and clear the queue
-    if pygame.mixer.music.get_busy():
+    if pygame.mixer.music.get_busy(): #stop any currently playing sound and clear the queue
         pygame.mixer.music.stop()  
         pygame.mixer.music.unload()  #unload the previous music to avoid overlap
 
@@ -228,8 +225,6 @@ def try_again():
     socketio.emit('melody_finished')
     print('Finished playing all selected MIDI files.')
     is_playing = False  #reset the flag when done
-
-    
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

@@ -1,3 +1,6 @@
+<!--HTML file for the Survival Mode of Sound Game.
+Includes styles and script code.-->
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -44,7 +47,7 @@
             position: absolute;
             top: 350px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px; 
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -61,7 +64,7 @@
             top: 350px;
             left: 200px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px; 
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -78,7 +81,7 @@
             top: 350px;
             left: 200px;
             border-radius: 8px; 
-            padding: 12px 24px;  /* Space inside the button */
+            padding: 12px 24px;
             font-size: 16px;  
             font-weight: bold; 
             text-transform: uppercase;  
@@ -88,9 +91,9 @@
         }
 
         #endMessage {
-            font-size: 24px;  /* Keep larger font size */
-            font-weight: bold;  /* Keep bold text */
-            color: #000000;  /* Red text to match the container */
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
             position: absolute;
             top: 130px;
             left: 400px;
@@ -110,7 +113,7 @@
             justify-content: center;
             align-items: center;
         }
-        .square.red {
+        .square.yellow {
             background-color: rgb(231, 173, 67);
         }
     </style>
@@ -124,14 +127,21 @@
 
         <div class="title-container">
             <h1>Melody Memory Survival Mode</h1>
-            <p>Instructions: Recite the melody to win!</p>
+            <p>Instructions: Using your keyboard, recite the melody to win!</p>
         </div>
 
+        <!--start/quit, listen, stop listening buttons-->
         <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
         <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
         <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
 
         <div id="squareContainer"></div> 
+
+        <!--displayed when game is over-->
+        <div id="gameOverMessage" style="display:none; position:absolute; top:200px; left:50px; right:50px; text-align:center;">
+            <h2>Game Over!</h2>
+            <p id="gameOverText"></p>
+        </div>
 
          <!--displayed when game is quit-->
         <div id="endMessage" style="display:none;">
@@ -139,10 +149,6 @@
         </div>
 
     </div>
-
-    
-
-   
 
     <script>
         const socket = io(); //SocketIO connection
@@ -152,13 +158,17 @@
 
         function toggleGame() {
             if (!gameRunning) {
-                startGame(); //start the game
+                startGame(); 
             } else {
-                quitGame(); //quit the game
+                quitGame(); 
             }
         }
 
         function startGame() {
+
+            //hide the "Game Over" message when restarting
+            document.getElementById('gameOverMessage').style.display = 'none';
+
             //hide the end message
             document.getElementById('endMessage').style.display = 'none';
             gameRunning = true;
@@ -167,9 +177,10 @@
             
             const squareContainer = document.getElementById('squareContainer');
             squareContainer.innerHTML = ''; //clear existing squares
+            squareContainer.style.display = 'block'; //make square container visible
             drawSquares(squareContainer);
 
-            startMelody(); //start the melody
+            startMelody(); 
         }
 
         function quitGame() {
@@ -177,56 +188,59 @@
             const startQuitButton = document.getElementById('startQuitButton');
             startQuitButton.innerText = "Start"; //change button text to "Start"
 
-            // Hide listening and stop buttons
+            //hide listening and stop buttons
             document.getElementById('listenButton').style.display = 'none';
             document.getElementById('stopButton').style.display = 'none';
+            document.getElementById('squareContainer').style.display = 'none';
 
-            // Send a stop signal to the backend if needed
-            socket.emit('quit_game'); //notify the backend
+            //send a stop signal to the backend
+            socket.emit('quit_game');
 
-            // Show the end message
+            //show the end message
             document.getElementById('endMessage').style.display = 'block';
         }
 
-    function startMelody() {
-        // Send a POST request to trigger melody generation
-        fetch('/start_melody', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
+        function startMelody() {
+            //send POST request for melody generation
+            fetch('/start_melody', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data.message); // Display message if needed
-            document.getElementById('listenButton').style.display = 'inline-block'; // Show "Start Listening" button
+            console.log(data.message);
+            document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
         })
         .catch(error => console.error('Error:', error));
-    }
+        }
 
         function startListening() {
-            listeningMode = true; // Enable listening mode
-            recordedKeys = []; // Clear recorded keys from any previous session
+            listeningMode = true; //enable listening mode
+            recordedKeys = []; //clear recorded keys from any previous session
+
+            //track when user pushes keyboard buttons
             document.addEventListener('keydown', handleKeyPress);
             document.addEventListener('keyup', handleKeyRelease);
-            document.getElementById('listenButton').style.display = 'none'; // Hide "Start Listening" button
-            document.getElementById('stopButton').style.display = 'inline-block'; // Show "Stop Listening" button
+
+            document.getElementById('listenButton').style.display = 'none'; //hide "Start Listening" button
+            document.getElementById('stopButton').style.display = 'inline-block'; //show "Stop Listening" button
         }
 
         function stopListening() {
-            listeningMode = false; // Disable listening mode
+            listeningMode = false; //disable listening mode
             document.removeEventListener('keydown', handleKeyPress);
             document.removeEventListener('keyup', handleKeyRelease);
-            document.getElementById('stopButton').style.display = 'none'; // Hide "Stop Listening" button
+            document.getElementById('stopButton').style.display = 'none'; //hide "Stop Listening" button
 
-            console.log('Recorded keys:', recordedKeys); // For debugging
-            // Send recorded keys to backend
-            fetch('/user_input', {
+            console.log('Recorded keys:', recordedKeys);
+            fetch('/user_input', { //send recorded keys to backend
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userInput: recordedKeys }) // Send the keys as JSON
+                body: JSON.stringify({ userInput: recordedKeys }) //send keys as JSON
             })
             .then(response => response.json())
             .then(data => console.log(data.message))
@@ -238,7 +252,7 @@
             letters.forEach(letter => {
                 const square = document.createElement('div');
                 square.classList.add('square');
-                square.setAttribute('id', `square-${letter}`); // Give each square a unique ID based on the letter
+                square.setAttribute('id', `square-${letter}`); //give each square a unique ID based on letter
                 square.innerText = letter;
                 container.appendChild(square);
             });
@@ -251,9 +265,9 @@
             const square = document.getElementById(`square-${key}`);
             
             if (square) {
-                recordedKeys.push(key); // Record the pressed key (even if it's pressed multiple times)
-                square.classList.add('red'); // Turn the square red
-                playMidiForKey(key); // Play the corresponding MIDI file every time the key is pressed
+                recordedKeys.push(key); //record pressed key 
+                square.classList.add('yellow'); //turn the square yellow
+                playMidiForKey(key); //play corresponding MIDI file every time the key is pressed
             }
         }
 
@@ -263,7 +277,7 @@
             const key = event.key.toLowerCase();
             const square = document.getElementById(`square-${key}`);
             if (square) {
-                square.classList.remove('red'); // Revert square color when the key is released
+                square.classList.remove('yellow'); //revert square color when the key is released
             }
         }
 
@@ -281,37 +295,58 @@
 
             const midiFile = midiMap[key];
             if (midiFile) {
-                socket.emit('play_midi', { midiFile: midiFile }); // Emit event to server to play MIDI
+                socket.emit('play_midi', { midiFile: midiFile }); //emit event to server to play MIDI
             }
         }
 
-        // Listen for the 'highlight_square' event from the server
+        //listen for 'highlight_square' event from the server
         socket.on('highlight_square', function(data) {
             const letter = data.letter;
             const square = document.getElementById(`square-${letter}`);
             if (square) {
-                square.classList.add('red');
+                square.classList.add('yellow');
             }
         });
 
-        // Listen for the 'reset_square' event to turn squares back to grey
+        //listen for 'reset_square' event to turn squares back to grey
         socket.on('reset_square', function(data) {
             const letter = data.letter;
             const square = document.getElementById(`square-${letter}`);
             if (square) {
-                square.classList.remove('red');
+                square.classList.remove('yellow');
             }
         });
-        // Automatically move to the next round if user input was correct
-    socket.on('next_round', function() {
-        console.log('User input was correct. Starting next round...');
-        startMelody();  // Start a new round automatically
-    });
 
-    // Handle game over
+        //automatically move to next round if user input was correct
+        socket.on('next_round', function() {
+            console.log('User input was correct. Starting next round...');
+            startMelody();  //start new round automatically
+        });
+
+
+    //handle game over
     socket.on('game_over', function(data) {
         const { level, score } = data;
-        alert(`Game Over!\nLevel: ${level}\nScore: ${score}`);
+        
+        //hide buttons and square container
+        document.getElementById('squareContainer').style.display = 'none';
+        document.getElementById('listenButton').style.display = 'none';
+        document.getElementById('stopButton').style.display = 'none';
+
+        //update the Game Over text
+        const gameOverText = document.getElementById('gameOverText');
+        gameOverText.innerHTML = `You reached level: ${level}<br>Your score: ${score}`;
+
+        //show Game Over message
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        gameOverMessage.style.display = 'block';
+
+        //update the start button to say "Restart"
+        const startQuitButton = document.getElementById('startQuitButton');
+        startQuitButton.innerText = "Restart";
+        gameRunning = false;  //mark game as not running
+        // Send a stop signal to the backend if needed
+        socket.emit('quit_game'); //notify the backend
     });
 
     </script>

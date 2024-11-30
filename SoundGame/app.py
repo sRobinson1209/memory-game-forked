@@ -1,3 +1,8 @@
+'''
+========================
+SURVIVAL MODE APP.PY FILE
+========================
+'''
 from flask import Flask, send_file, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -6,29 +11,29 @@ import time
 import pygame
 
 from SoundGameSurvival import letters_and_files_dict, get_midi_files, get_user_input, check_user_input
+
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app)
 
-letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
+#Game state variables
 is_playing = False
 game_running = False
+
 level = 0
 score = 0
-current_speed = 1000 #default 1 second
+
+current_speed = 1000 
 current_length = 3
 
-'''
-WHEN GAME OVER, FIX THE QUIT BUTTON 
-fix when the buttons are pressable or not
-make it pretty
+letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 
-'''
-
+#route to serve index.HTML file
 @app.route('/')
 def melody_memory():
     return send_file('index.html')
 
+#SocketIO event to play specific MIDI file
 @socketio.on('play_midi')
 def handle_play_midi(data):
     midi_file = data['midiFile']
@@ -36,6 +41,8 @@ def handle_play_midi(data):
     pygame.mixer.music.load(midi_file)
     pygame.mixer.music.play()
 
+
+#HTTP route to start melody playback if the game isn't already running
 @app.route('/start_melody', methods=['POST'])
 def start_melody():
     global game_running
@@ -44,7 +51,8 @@ def start_melody():
         socketio.start_background_task(play_random_midi_files)  # start the melody task
     return jsonify({'message': 'Melody started!'})
 
-# Listen for the 'quit_game' event from the frontend
+
+#listen for the 'quit_game' event from the frontend
 @socketio.on('quit_game')
 def handle_quit_game():
     global is_playing
@@ -53,25 +61,30 @@ def handle_quit_game():
     global current_speed
     global score
     global level
-    is_playing = False  # stop any melody playing
-    game_running = False  # mark the game as not running
+
+    is_playing = False  
+    game_running = False 
+
     current_length = 3
     current_speed = 1000
+
     print('Game has been quit by the user.')
+
     score = 0
     level = 0
 
+#HTTP route to send list of available letters to frontend
 @app.route('/get_letters', methods=['GET'])
 def get_letters():
     return jsonify({'letters': letters})
 
+
+#HTTP route to receive user input and check if it matches the melody
 @app.route('/user_input', methods=['POST'])
 def receive_user_input():
     user_input = request.json.get('userInput', [])
-    # Call the get_user_input function from SoundGameSurvival.py
     get_user_input(user_input)
     message = move_on_or_game_over()
-    
     return jsonify({'message': message})
 
 #calculates the parameters based on the level the user is on
@@ -99,14 +112,14 @@ def calculate_parameters():
     
     print(f"Current Level: {level}\nCurrent Score: {score}\nCurrent Speed: {current_speed}\nCurrent Length: {current_length}")
 
-
+#play random MIDI files for user to recite
 def play_random_midi_files():
     global is_playing
 
     if is_playing:
-        return  # Prevent starting a new melody while one is still playing
+        return  #prevent starting a new melody while one is still playing
 
-    is_playing = True  # Set the flag to True when melody starts
+    is_playing = True  #set the flag to True when melody starts
 
     calculate_parameters() #called from backend
 
@@ -123,10 +136,10 @@ def play_random_midi_files():
 
     pygame.mixer.init()
 
-    # Stop any currently playing sound and clear the queue
+    #stop any currently playing sound and clear the queue
     if pygame.mixer.music.get_busy():
-        pygame.mixer.music.stop()  # Stop any currently playing MIDI
-        pygame.mixer.music.unload()  # Unload the previous music to avoid overlap
+        pygame.mixer.music.stop()  #stop any currently playing MIDI
+        pygame.mixer.music.unload()  #unload the previous music to avoid overlap
 
 
     for midi_file in midi_files:
@@ -141,8 +154,10 @@ def play_random_midi_files():
 
     socketio.emit('melody_finished')
     print('Finished playing all selected MIDI files.')
-    is_playing = False  # Reset the flag when done
-    
+    is_playing = False  #reset the flag when done
+
+
+#function to check if the user input was correct and proceed accordingly
 def move_on_or_game_over():
     print("Calling move_on_or_game_over function!")
     checked_user_input = check_user_input()
@@ -157,20 +172,16 @@ def move_on_or_game_over():
         score += 2
         level += 1
         print("User input was correct!")
-        socketio.emit('next_round')  # Notify frontend to proceed to the next round
+        socketio.emit('next_round')  #notify frontend to proceed to the next round
         return play_random_midi_files()
     
     else:
         print("User input was incorrect!")
         global game_running
         game_running = False
-        socketio.emit('game_over', {'level': level, 'score': score})  # Notify frontend that the game is over
+        socketio.emit('game_over', {'level': level, 'score': score})  #notify frontend that the game is over
         return f"Game Over!\nLevel: {level}\nScore: {score}"
 
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
-
-'''
-TRY TO ADD UNIT TESTS!
-'''
