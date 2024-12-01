@@ -48,6 +48,7 @@ function initializeCanvas()
             console.log("Canvas and context initialized successfully.");
         }
     } 
+
     else 
     {
         console.error("Canvas element is not found!");
@@ -223,7 +224,7 @@ async function fetchRhythm()
  */
 async function playRhythm() 
 {
-    document.getElementById('feedback').textContent = "Listen to the rhythm...";
+    document.getElementById('feedback').textContent = "Watch the rhythm...";
     document.getElementById('next-round').style.display = 'none';
     document.getElementById('quit-button').style.display = 'none';
 
