@@ -55,19 +55,21 @@ function initializeCanvas()
     }
 }
 
+/*
 // Function to show the mode selection menu
 function showModeSelectionMenu() 
 {
     document.getElementById('mode-selection-menu').style.display = 'flex';
     document.getElementById('feedback').textContent = "Waiting for game mode selection...";  // Update feedback
 }
+*/
 
 // Event listeners for mode buttons
-document.getElementById('relaxed-mode-button').addEventListener('click', () => startGame('Relaxed'));
-document.getElementById('survival-mode-button').addEventListener('click', () => startGame('Survival'));
+//document.getElementById('relaxed-mode-button').addEventListener('click', () => startGame('Relaxed'));
+//document.getElementById('survival-mode-button').addEventListener('click', () => startGame('Survival'));
 
 // Show the menu when the page loads without starting the game
-document.addEventListener('DOMContentLoaded', showModeSelectionMenu);
+//document.addEventListener('DOMContentLoaded', showModeSelectionMenu);
 
 /**
  * Records player input when spacebar is pressed and evaluates timing.
