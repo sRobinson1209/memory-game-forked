@@ -30,8 +30,8 @@ letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 
 #route to serve index.HTML file
 @app.route('/')
-def melody_memory():
-    return send_file('index.html')
+def melody_memory_sur():
+    return render_template('index_SG_Survival.html')
 
 #SocketIO event to play specific MIDI file
 @socketio.on('play_midi')

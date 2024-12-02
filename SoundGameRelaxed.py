@@ -7,18 +7,27 @@ SOUND GAME RELAXED MODE
 current_midi_files = []
 current_user_input = []
 
-letters_and_files_dict = {'MID_FILES/c_note_one_sec.mid' : 'a', 'MID_FILES/d_note_one_sec.mid' : 's', 'MID_FILES/e_note_one_sec.mid':'d',
-                          'MID_FILES/f_note_one_sec.mid':'f', 'MID_FILES/g_note_one_sec.mid': 'g', 'MID_FILES/a_note_one_sec.mid': 'h',
-                          'MID_FILES/b_note_one_sec.mid' : 'j', 'MID_FILES/c_oct_note_one_sec.mid':'k'}
+letters_and_files_dict = {
+    'a_note_one_sec.mid': 'a',
+    'b_note_one_sec.mid': 'b',
+    'c_note_one_sec.mid': 'c',
+    'd_note_one_sec.mid': 'd',
+    'e_note_one_sec.mid': 'e',
+    'f_note_one_sec.mid': 'f',
+    'g_note_one_sec.mid': 'g',
+    'c_oct_note_one_sec.mid': 'k',
+}
+
 
 
 
 #called from frontend to update global variable
 def get_midi_files(midi_files):
-    print(f"Selected MIDI Files recieved: {midi_files}")
+    # Send only the file names
+    print(f"Selected MIDI Files sent to frontend: {midi_files}")
     global current_midi_files
     current_midi_files = midi_files
-    
+
 
 #called from frontend to update global variable
 def get_user_input(user_input):
@@ -53,6 +62,6 @@ def check_user_input():
 
 def send_current_midi_files_back():
     global current_midi_files
-    return_midi_files = current_midi_files
-    return return_midi_files
+    return [os.path.basename(file) for file in current_midi_files]
+
     

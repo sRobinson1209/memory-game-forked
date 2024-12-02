@@ -1,28 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rhythm Game</title>
-    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 
+    <!-- Inline CSS for styling the rhythm game interface -->
     <style>
-        body {
+        body 
+        {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #222;
-            color: #fff;
-            font-family: Arial, sans-serif;
+            background-color: #b2e3a8; /* Light Green background */
+            color: #0f0f0f; /* Black text */
+            font-family: 'Press Start 2P', sans-serif; /* Pixelated font for Minecraft feel */
         }
-        .feedback {
+
+        /* Styling for feedback text */
+        .feedback 
+        {
             font-size: 24px;
             margin-top: 20px;
         }
-        #play-again {
+
+        /* Mode selection overlay */
+        .menu-overlay  
+        {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            /* Temporarily hidden, change back to flex if needed.  */
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+
+        /* Style for buttons in the mode selection menu */
+        .mode-button 
+        {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Next Round button styling */
+        #next-round 
+        {
             margin-top: 20px;
             padding: 10px 20px;
             font-size: 18px;
@@ -32,23 +67,96 @@
             cursor: pointer;
             display: none;  /* Hidden by default */
         }
-        #canvas {
-            background-color: #333;
+
+        /* Quit button styling */
+        #quit-button 
+        {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #fff;
+            color: #222;
+            border: none;
+            cursor: pointer;
+            display: none;  /* Hidden by default */
+        }
+
+        /* Canvas styling for rhythm visualization */
+        #canvas 
+        {
+            background-color: #ADD8E6;
             margin-top: 20px;
             border: 1px solid #fff;
         }
+
+        /* Center the entire game info container */
+        #game-info
+        {
+            display: flex;
+            justify-content: center;   
+            align-items: center;       
+            width: 100%;
+            max-width: 500px;
+            margin: 10px 0;
+            font-size: 18px;
+            text-align: center;
+        } 
+
+        /* Needed this so game info wasn't smashed together.*/
+        #round-display, #mode-display, #mistake-display, #points-display
+        {
+            margin: 0 10px;
+        }
     </style>
 </head>
-<body>
+<!-- Inject the game mode dynamically with the data-mode attribute -->
+<body data-mode="{{ mode }}">
+
+
+    <!-- Main title for the rhythm game -->
     <h1>Rhythm Game</h1>
+
+    <!-- Display for Current Round and Game Mode -->
+    <div id="game-info">
+        <div id="round-display">Round:</div>
+        <div id="mode-display">Mode:</div>
+        <div id="mistake-display" style="display: none;">Mistakes:</div>
+        <div id="points-display" style="display: none;">Points:</div>
+    </div>
+
+    <!-- Instruction for the player to use the spacebar to interact with the game -->
     <p>Press the spacebar to repeat the rhythm!</p>
+
+    <!-- Feedback section to display game messages (e.g., "Waiting for rhythm...") -->
     <div class="feedback" id="feedback">Waiting for rhythm...</div>
 
-    <!-- Canvas for visual feedback -->
+    <!-- New stopwatch display for timing player input -->
+    <div class="feedback" id="stopwatch">0.00</div>
+
+    <!-- New stopwatch log display for tracking each beat's expected and actual times -->
+    <div id="stopwatch-log" style="margin-top: 20px;">
+        <!-- This container will be populated dynamically -->
+    </div>
+
+    <!-- Mode Selection Menu -->
+    <div id="mode-selection-menu" class="menu-overlay">
+        <h2>Select Game Mode</h2>
+        <button id="relaxed-mode-button" class="mode-button">Relaxed Mode</button>
+        <button id="survival-mode-button" class="mode-button">Survival Mode</button>
+    </div>
+
+    <!-- Canvas for visual rhythm display, where circles will expand to indicate beats -->
     <canvas id="canvas" width="400" height="400"></canvas>
 
-    <!-- "Play Again" button to restart the game -->
-    <button id="play-again" onclick="resetGame()">Play Again</button>
+    <!-- Button to proceed to the next round -->
+    <button id="next-round" onclick="nextRound()">Next Round</button>
+
+    <!-- Button to reset the game as if you just opened it -->
+    <button id="quit-button" onclick="quitGame()">Quit</button>
+
+    <!-- Link to the external JavaScript file with game logic -->
+    <script src="{{ url_for('static', filename='js/rhythm_game.js') }}"></script>
 
 </body>
+
 </html>
