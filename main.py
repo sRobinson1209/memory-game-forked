@@ -1,26 +1,30 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import os
-import psycopg2
-import psycopg2.extras
-import re
-import random
-from dotenv import load_dotenv
-from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
-from NumberGame.NumberGameSurvival import set_level_parameters_survival
 from flask_cors import CORS
 from flask_socketio import SocketIO
+import os
 import random
 import time
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
 import pygame
-import pretty_midi
+
+# Local module imports
+from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
+from NumberGame.NumberGameSurvival import set_level_parameters_survival
+from SoundGameRelaxed import (
+    get_midi_files as get_midi_files_relaxed,
+    get_user_input as get_user_input_relaxed,
+    check_user_input as check_user_input_relaxed,
+    send_current_midi_files_back,
+    letters_and_files_dict as relaxed_letters_and_files_dict,
+)
 from SoundGameSurvival import (
     get_midi_files as get_midi_files_survival,
     get_user_input as get_user_input_survival,
     check_user_input as check_user_input_survival,
     letters_and_files_dict as survival_letters_and_files_dict,
 )
-
-from globals import current_midi_files, current_user_input, is_playing, game_running, letters_and_files_dict
 from app_SG_relaxed import(
     play_random_midi_files,
     move_on_or_game_over,
@@ -29,13 +33,8 @@ from app_SG_relaxed import(
     melody_memory,
     receive_user_input
 )
-from SoundGameRelaxed import (
-    letters_and_files_dict,
-    get_midi_files,
-    get_user_input,
-    check_user_input,
-    send_current_midi_files_back
-)
+from globals import current_midi_files, current_user_input, is_playing, game_running
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,22 +50,20 @@ game_running = False
 sound_level =0
 sound_cur_speed = 1000
 sound_cur_length = 3
+
 # Survival mode state variables
 survival_is_playing = False
 survival_game_running = False
-
 survival_level = 0
 survival_score = 0
-
 survival_current_speed = 1000
 survival_current_length = 3
 
 letters = ['a','s','d','f','g','h','j','k']
 
+#trying to append the correct midi files path to game
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MIDI_FILES_PATH = os.path.join(BASE_DIR, 'static', 'MID_FILES')
-
-
 
 # Database URL for PostgreSQL
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -216,8 +213,6 @@ def dashboard():
         return render_template('dashboard.html', username=session['username'], stats=user_stats)
     return redirect(url_for('login'))
 
- 
-
 # Game mode selection route
 @app.route('/select_game_mode', methods=['GET', 'POST'])
 def select_game_mode():
@@ -231,8 +226,10 @@ def select_game_mode():
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
         elif game_mode == 'sound_game_sur':
             return redirect(url_for('sound_game_survival'))
-        elif game_mode == 'rhythm':
-            return redirect(url_for('rhythm_game')) # redirect to rhythm game
+        elif game_mode == 'rhythm_relaxed':
+            return redirect(url_for('rhythm_game_relaxed')) # redirect to rhythm game
+        elif game_mode == 'rhythm_survival':
+            return redirect(url_for('rhythm_game_survival'))
         elif game_mode == 'sound_game_rel':
             return redirect(url_for('sound_game_relaxed'))
         elif game_mode == 'more_info':
@@ -241,8 +238,6 @@ def select_game_mode():
             # If no game mode is selected, show an error or redirect back
             return redirect(url_for('home'))
 
-    # If GET request, render the page to allow user to choose game mode
-    #return render_template('select_game_mode.html')
 
 
 #instructions route 
@@ -269,153 +264,121 @@ def update_score_in_database(user_id, points, current_level):
         update_query = "UPDATE accounts SET score = score + %s WHERE id = %s"
         execute_query(update_query, (points, user_id))
 
-
-# Relaxed game mode route
+#number game relaxed 
 @app.route('/relaxed_game_mode', methods=['GET', 'POST'])
 def relaxed_game_mode():
-    if 'level_num' not in session or 'gen_nums' not in session:
-        session['level_num'] = 1 # set level to one once loaded into the game
-        session['gen_num'] = [] #clear generated numbers to regenerate for new session
+    # Initialize session keys specific to the relaxed mode
+    if 'relaxed_level_num' not in session or 'relaxed_gen_nums' not in session:
+        session['relaxed_level_num'] = 1  # Start at level 1 for relaxed mode
+        session['relaxed_gen_nums'] = []  # Clear generated numbers for a new session
 
-    # Get the level and number length from session, or set default values
-    level_num = session.get('level_num', 1)
+    level_num = session.get('relaxed_level_num', 1)
     base_num_length = 3
-    gen_nums_length = session.get('gen_nums_length', 3)
-    gen_nums_speed = 1  # Speed stays the same
+    gen_nums_length = base_num_length + (level_num // 3)
 
-    # Increase the difficulty every 7 levels
-    gen_nums_length = base_num_length + (level_num // 7)
-
-    # Generate the numbers only if they dont exist in session already 
-    if 'gen_nums' not in session:
+    # Generate the numbers if not already generated
+    if not session.get('relaxed_gen_nums'):
         gen_nums = [random.randint(0, 9) for _ in range(gen_nums_length)]
-        session['gen_nums'] = gen_nums
+        session['relaxed_gen_nums'] = gen_nums
     else:
-        gen_nums = session['gen_nums'] # retrieve existing numbers from the session
+        gen_nums = session['relaxed_gen_nums']
 
-    print("Generated numbers:", gen_nums)
+    print(f"Relaxed Mode - Generated numbers: {gen_nums}, Level: {level_num}")
 
-    # Handle form submission
     if request.method == 'POST':
         action = request.form.get('action')
 
         if action == 'quit':
-            session.pop('level_num', None)
-            session.pop('gen_nums', None) #clear generated numbers on quit
-            return redirect(url_for('home'))
+            # Reset the game level and numbers for relaxed mode
+            #session['relaxed_level_num'] = 1
+            level = 1
+            session.pop('relaxed_gen_nums', None)
+            return redirect(url_for('home'), numbers=[], level=1)
 
-        if action == 'skip':
-            session.pop('gen_nums', None)
-            level_num += 1
-            session['level_num'] = level_num  # Update session with new level
-            return redirect(url_for('relaxed_game_mode'))  # Reload to the next level
-
-        # Handle the user input (numbers entered by user)
-        if action == 'submit':
-            recited_nums = request.form.get('numbers_input', '').strip()
-            print("User entered:", recited_nums)  # Debugging line
-
-            if recited_nums:
+        if action == 'skip' or action == 'submit':
+            if action == 'submit':
+                recited_nums = request.form.get('numbers_input', '').strip()
                 try:
-                    # Convert user input into a list of integers
                     recited_nums = [int(num) for num in recited_nums.split()]
                 except ValueError:
-                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Please enter valid numbers.")
+                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Invalid input.")
 
-                #Debugging line
-                print("Checking user input:", recited_nums)  
+                if recited_nums != gen_nums:
+                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Incorrect input.")
 
-                # Compare user input with generated numbers
-                if recited_nums == gen_nums:
-                    level_num += 1
-                    session['level_num'] = level_num  # Update session with new level
-                    session.pop('gen_nums', None)
+            # Update level and regenerate numbers for relaxed mode
+            level_num += 1
+            session['relaxed_level_num'] = level_num
+            session.pop('relaxed_gen_nums', None)
+            gen_nums = [random.randint(0, 9) for _ in range(base_num_length + (level_num // 3))]
+            session['relaxed_gen_nums'] = gen_nums
 
-                    #update score 
-                    points = 5  # Example: Award 10 points per passed level
-                    update_score_in_database(session['id'], points, level_num)
-
-                    return redirect(url_for('relaxed_game_mode'))  # Proceed to next level
-                else:
-                    return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num, error="Incorrect input, try again.")
+            points = 5
+            update_score_in_database(session['id'], points, level_num)
+            return redirect(url_for('relaxed_game_mode'))
 
     return render_template('relaxed_game_mode.html', numbers=gen_nums, level=level_num)
 
-# Survival game mode route
+#survival game 
 @app.route('/survival_game_mode', methods=['GET', 'POST'])
 def survival_game_mode():
-    # Get the level and number length from session, or set default values
-    level_num = session.get('level_num', 1)
+    # Initialize session keys specific to the survival mode
+    if 'survival_level_num' not in session or 'survival_gen_nums' not in session:
+        session['survival_level_num'] = 1  # Start at level 1 for survival mode
+        session['survival_gen_nums'] = []  # Clear generated numbers for a new session
+
+    level_num = session.get('survival_level_num', 1)
     base_num_length = 3
-    gen_nums_length = base_num_length + (level_num // 7)
-    
-    # Generate numbers if they don't exist in the session
-    if 'gen_nums' not in session:
+    gen_nums_length = base_num_length + (level_num // 3)
+
+    # Generate the numbers if not already generated
+    if not session.get('survival_gen_nums'):
         gen_nums = [random.randint(0, 9) for _ in range(gen_nums_length)]
-        session['gen_nums'] = gen_nums
+        session['survival_gen_nums'] = gen_nums
     else:
-        gen_nums = session['gen_nums']
-    
-    # Handle form submission
+        gen_nums = session['survival_gen_nums']
+
+    print(f"Survival Mode - Generated numbers: {gen_nums}, Level: {level_num}")
+
     if request.method == 'POST':
         action = request.form.get('action')
 
         if action == 'quit':
-            session.pop('level_num', None)
-            session.pop('gen_nums', None)
+            # Reset the game level and numbers for survival mode
+            level = 1
+            session.pop('survival_gen_nums', None)
             return redirect(url_for('home'))
 
-        if action == 'skip':
-            level_num += 1
-            session['level_num'] = level_num
-            session.pop('gen_nums', None)
-            return redirect(url_for('survival_game_mode'))
-
-        if action == 'submit':
-            recited_nums = request.form.get('numbers_input', '').strip()
-
-            if recited_nums:
+        if action == 'skip' or action == 'submit':
+            if action == 'submit':
+                recited_nums = request.form.get('numbers_input', '').strip()
                 try:
                     recited_nums = [int(num) for num in recited_nums.split()]
                 except ValueError:
-                    return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num, error="Enter valid numbers.")
+                    return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num, error="Invalid input.")
 
-                # Check if user input matches generated sequence
-                if recited_nums == gen_nums:
-                    level_num += 1
-                    session['level_num'] = level_num
-                    session.pop('gen_nums', None)
-                    return redirect(url_for('survival_game_mode'))
-
-                    #update score 
-                    points = 10  # Example: Award 10 points per passed level
-                    update_score_in_database(session['id'], points, level_num)
-                else:
-                    # Restart game on incorrect answer
-                    session['level_num'] = 1
-                    session.pop('gen_nums', None)
+                if recited_nums != gen_nums:
+                    # Restart the survival mode game on incorrect input
+                    session['survival_level_num'] = 1
+                    session.pop('survival_gen_nums', None)
                     return render_template('survival_game_mode.html', numbers=[], level=1, error="Incorrect! Game Over!")
+
+            # Update level and regenerate numbers for survival mode
+            level_num += 1
+            session['survival_level_num'] = level_num
+            session.pop('survival_gen_nums', None)
+            gen_nums = [random.randint(0, 9) for _ in range(base_num_length + (level_num // 3))]
+            session['survival_gen_nums'] = gen_nums
+
+            points = 10
+            update_score_in_database(session['id'], points, level_num)
+            return redirect(url_for('survival_game_mode'))
 
     return render_template('survival_game_mode.html', numbers=gen_nums, level=level_num)
 
-#implementing Rhythm Game 
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
 
-#route to hold rhythm template 
-@app.route('/rhythm_game') 
-def rhythm_game():
-    return render_template('rhythm_index.html')
-
-# Endpoint to generate a rhythm
-@app.route('/generate_rhythm', methods=['GET'])
-def generate_rhythm():
-    length = int(request.args.get('length', 4))  # Default rhythm length of 4 beats
-    rhythm = [random.uniform(0.5, 1.5) for _ in range(length)]  # Random time intervals
-    return jsonify({'rhythm': rhythm})
-
-
-
-#  if __name__ == '__main__':
-#     socketio.run(app, debug=True)
 
 #sound game routes 
 @app.route('/sound_game_relaxed')
@@ -529,6 +492,25 @@ def handle_quit_game_survival():
     survival_score = 0
 
     print("Survival Mode: Game quit by the user.")
+
+
+@app.route('/rhythm_game_relaxed', methods=['GET', 'POST'])
+def rhythm_game_relaxed():
+    # Render the rhythm game with relaxed mode settings
+    return render_template('rhythm_index.html', mode='Relaxed')
+
+@app.route('/rhythm_game_survival', methods=['GET', 'POST'])
+def rhythm_game_survival():
+    # Render the rhythm game with survival mode settings
+    return render_template('rhythm_index.html', mode='Survival')
+
+@app.route('/generate_rhythm', methods=['GET'])
+def generate_rhythm():
+    length = int(request.args.get('length', 4))  # Default rhythm length of 4 beats
+    rhythm = [random.uniform(0.5, 1.5) for _ in range(length)]  # Random time intervals
+    return jsonify({'rhythm': rhythm})
+
+
 
 
 
