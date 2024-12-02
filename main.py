@@ -8,13 +8,65 @@ from dotenv import load_dotenv
 from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
 from NumberGame.NumberGameSurvival import set_level_parameters_survival
 from flask_cors import CORS
+from flask_socketio import SocketIO
+import random
+import time
+import pygame
+import pretty_midi
+from SoundGameSurvival import (
+    get_midi_files as get_midi_files_survival,
+    get_user_input as get_user_input_survival,
+    check_user_input as check_user_input_survival,
+    letters_and_files_dict as survival_letters_and_files_dict,
+)
+
+from globals import current_midi_files, current_user_input, is_playing, game_running, letters_and_files_dict
+from app_SG_relaxed import(
+    play_random_midi_files,
+    move_on_or_game_over,
+    start_melody,
+    try_again,
+    melody_memory,
+    receive_user_input
+)
+from SoundGameRelaxed import (
+    letters_and_files_dict,
+    get_midi_files,
+    get_user_input,
+    check_user_input,
+    send_current_midi_files_back
+)
 
 # Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app)
 app.secret_key = 'secret1209'  # Necessary for session management
+
+#Variables for sound game 
+is_playing =False
+game_running = False
+sound_level =0
+sound_cur_speed = 1000
+sound_cur_length = 3
+# Survival mode state variables
+survival_is_playing = False
+survival_game_running = False
+
+survival_level = 0
+survival_score = 0
+
+survival_current_speed = 1000
+survival_current_length = 3
+
+letters = ['a','s','d','f','g','h','j','k']
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MIDI_FILES_PATH = os.path.join(BASE_DIR, 'static', 'MID_FILES')
+
+
 
 # Database URL for PostgreSQL
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -177,8 +229,12 @@ def select_game_mode():
             return redirect(url_for('relaxed_game_mode'))  # Redirect to relaxed game mode
         elif game_mode == 'num_survival':
             return redirect(url_for('survival_game_mode'))  # Redirect to survival game mode
+        elif game_mode == 'sound_game_sur':
+            return redirect(url_for('sound_game_survival'))
         elif game_mode == 'rhythm':
             return redirect(url_for('rhythm_game')) # redirect to rhythm game
+        elif game_mode == 'sound_game_rel':
+            return redirect(url_for('sound_game_relaxed'))
         elif game_mode == 'more_info':
             return redirect(url_for('instructions'))
         else:
@@ -356,6 +412,123 @@ def generate_rhythm():
     rhythm = [random.uniform(0.5, 1.5) for _ in range(length)]  # Random time intervals
     return jsonify({'rhythm': rhythm})
 
+
+
+#  if __name__ == '__main__':
+#     socketio.run(app, debug=True)
+
+#sound game routes 
+@app.route('/sound_game_relaxed')
+def sound_game_relaxed():
+    return melody_memory()
+
+@app.route('/start_melody', methods=['POST'])
+def start_melody_route():
+    return start_melody()
+
+@app.route('/user_input', methods=['POST'])
+def user_input_route():
+    user_input = request.json.get('userInput', [])
+    get_user_input(user_input)  # Update user input in the backend
+    return receive_user_input()
+
+@app.route('/try_melody_again', methods=['POST'])
+def try_melody_again_route():
+    return try_again()
+
+#Sound Game Survival 
+@app.route('/sound_game_survival',methods=['GET','POST'])
+def sound_game_survival():
+    return render_template('index_SG_Survival.html')
+
+def play_random_midi_files_survival():
+    global survival_is_playing
+
+    if survival_is_playing:
+        return  # Prevent starting a new melody while one is playing
+
+    survival_is_playing = True  # Set the flag to True when melody starts
+    calculate_parameters_survival()  # Adjust parameters based on the level
+
+    global survival_current_length, survival_current_speed, survival_letters_and_files_dict
+
+    if survival_current_length > len(survival_letters_and_files_dict):
+        raise ValueError("Length cannot exceed the number of available file paths.")
+
+    midi_files = random.sample(list(survival_letters_and_files_dict.keys()), survival_current_length)
+    get_midi_files_survival(midi_files)
+
+    pygame.mixer.init()
+
+    try:
+        for midi_file in midi_files:
+            letter = survival_letters_and_files_dict[midi_file]
+            socketio.emit('highlight_square', {'letter': letter})
+
+            pygame.mixer.music.load(os.path.join('static', 'MID_FILES', midi_file))
+            pygame.mixer.music.play()
+            pygame.time.wait(survival_current_speed)
+            socketio.emit('reset_square', {'letter': letter})
+            time.sleep(0.1)
+
+        socketio.emit('melody_finished')
+        print("Finished playing Survival Mode melody.")
+    except pygame.error as e:
+        print(f"Error playing MIDI file: {e}")
+    finally:
+        survival_is_playing = False
+def calculate_parameters_survival():
+    global survival_level, survival_current_speed, survival_current_length, survival_score
+
+    if survival_level != 0 and survival_level % 2 == 0:
+        survival_current_speed -= 300
+        survival_score += 2
+
+    if survival_level != 0 and survival_level % 3 == 0:
+        if survival_current_length < 8:
+            survival_current_length += 1
+        survival_current_speed += 20
+        survival_score += 3
+
+    print(f"Survival Mode -> Level: {survival_level}, Score: {survival_score}, "
+          f"Speed: {survival_current_speed}, Length: {survival_current_length}")
+
+@app.route('/user_input_survival', methods=['POST'])
+def receive_user_input_survival():
+    user_input = request.json.get('userInput', [])
+    get_user_input_survival(user_input)
+
+    if check_user_input_survival():
+        global survival_level, survival_score
+        survival_level += 1
+        survival_score += 2
+        print("Survival Mode: User input correct.")
+        socketio.emit('next_round')
+        play_random_midi_files_survival()
+        return jsonify({'message': 'Correct! Proceeding to next level.'})
+    else:
+        print("Survival Mode: User input incorrect.")
+        global survival_game_running
+        survival_game_running = False
+        socketio.emit('game_over', {
+            'level': survival_level,
+            'score': survival_score
+        })
+        return jsonify({'message': f"Game Over! Level: {survival_level}, Score: {survival_score}"})
+
+@socketio.on('quit_game_survival')
+def handle_quit_game_survival():
+    global survival_is_playing, survival_game_running
+    global survival_level, survival_current_length, survival_current_speed, survival_score
+
+    survival_is_playing = False
+    survival_game_running = False
+    survival_level = 0
+    survival_current_length = 3
+    survival_current_speed = 1000
+    survival_score = 0
+
+    print("Survival Mode: Game quit by the user.")
 
 
 
