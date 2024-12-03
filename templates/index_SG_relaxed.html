@@ -1,0 +1,429 @@
+<!--HTML file for the Relaxed Mode of Sound Game.
+Includes styles and script code.-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Melody Memory Game Relaxed Mode</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background:  #ffd27e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            width: 1000px;
+            height: 500px;
+            background-color:#f3be5d;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+        }
+
+        .title-container {
+            position: absolute;
+            top:10px;
+            color: rgb(0, 0, 0);
+            font-size: 1rem;
+        }
+
+        #startQuitButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            border-radius: 8px; 
+            padding: 12px 24px;  
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #listenButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 200px;
+            border-radius: 8px; 
+            padding: 12px 24px;  
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #stopButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 200px;
+            border-radius: 8px; 
+            padding: 12px 24px;  
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #messageText {
+            font-size: 24px;  
+            font-weight: bold;  
+            color: #000000;  
+            position: absolute;
+            top: 130px;
+            left: 400px;
+        }
+
+        #tryAgainButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 600px;
+            border-radius: 8px; 
+            padding: 12px 24px;  
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #passButton {
+            background-color: #9fbd5c; 
+            color: white;  
+            border: none;  
+            position: absolute;
+            top: 350px;
+            left: 300px;
+            border-radius: 8px; 
+            padding: 12px 24px; 
+            font-size: 16px;  
+            font-weight: bold; 
+            text-transform: uppercase;  
+            cursor: pointer;  
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  
+            transition: background-color 0.3s ease, transform 0.2s ease;  
+        }
+
+        #endMessage {
+            font-size: 24px;  
+            font-weight: bold;  
+            color: #000000;  
+            position: absolute;
+            top: 130px;
+            left: 400px;
+
+        }
+
+        .square {
+            display: inline-flex;
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            background-color: rgb(238, 237, 234);
+            text-align:center;
+            line-height: 50px;
+            font-size: 25px;
+            color: rgb(0, 0, 0);
+            justify-content: center;
+            align-items: center;
+        }
+        .square.blue {
+            background-color: rgb(104, 186, 248);
+        }
+    </style>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+   
+</head>
+
+<body>
+
+    <!--main container with centered content-->
+    <div class="game-container">
+        <div class = "title-container">
+            <h1>Melody Memory Relaxed Mode</h1>
+            <p>Instructions: Recite the melody to win!</p>
+        </div>
+        
+        <button type="button" id="startQuitButton" onclick="toggleGame()">Start</button>
+        <button type="button" id="listenButton" style="display:none;" onclick="startListening()">Start Listening</button>
+        <button type="button" id="stopButton" style="display:none;" onclick="stopListening()">Stop Listening</button>
+
+        <div id="squareContainer"></div> 
+
+        <!--disaplyed when user input is incorrect-->
+        <div id="messageContainer" style="display:none;">
+            <p id="messageText"></p>
+            <button type="button" id="tryAgainButton" style="display:none;" onclick="tryAgain()">Try Again</button>
+            <button type="button" id="passButton" style="display:none;" onclick="passLevel()">Pass</button>
+        </div>
+
+        <!--displayed when game is quit-->
+        <div id="endMessage" style="display:none;">
+            <p>Thanks for playing!</p>
+        </div>
+        
+    </div>
+
+
+    <script>
+
+        const socket = io(); //SocketIO connection
+        let gameRunning = false; //track game state
+        let listeningMode = false; //toggle for listening mode
+        let recordedKeys = []; //store pressed keys
+
+        function toggleGame() {
+            if (!gameRunning) {
+                startGame(); //start the game
+            } else {
+                quitGame(); //quit the game
+            }
+        }
+
+        function startGame() {
+
+            //hide the end message
+            document.getElementById('endMessage').style.display = 'none';
+            gameRunning = true;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Quit"; //change button text to "Quit"
+            
+            const squareContainer = document.getElementById('squareContainer');
+            squareContainer.innerHTML = ''; //clear existing squares
+            drawSquares(squareContainer);
+
+            startMelody(); //start the melody
+        }
+
+        function quitGame() {
+            gameRunning = false;
+            const startQuitButton = document.getElementById('startQuitButton');
+            startQuitButton.innerText = "Start"; //change button text to "Start"
+
+            //hide listening and stop buttons
+            document.getElementById('listenButton').style.display = 'none';
+            document.getElementById('stopButton').style.display = 'none';
+
+            // send a stop signal to the backend 
+            socket.emit('quit_game'); 
+
+            //show the end message
+            document.getElementById('endMessage').style.display = 'block';
+
+            //hide the message and buttons
+            document.getElementById('messageContainer').style.display = 'none';
+        }
+
+        function startMelody() {
+        //send POST request to trigger melody generation
+        fetch('/start_melody', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message (if needed)
+            document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
+        })
+        .catch(error => console.error('Error:', error));
+        }
+
+        function startListening() {
+            listeningMode = true; //enable listening mode
+            recordedKeys = []; //clear recorded keys from any previous session
+
+            document.addEventListener('keydown', handleKeyPress);
+            document.addEventListener('keyup', handleKeyRelease);
+
+            document.getElementById('listenButton').style.display = 'none'; //hide "Start Listening" button
+            document.getElementById('stopButton').style.display = 'inline-block'; //show "Stop Listening" button
+        }
+
+        function stopListening() {
+            listeningMode = false; //disable listening mode
+            document.removeEventListener('keydown', handleKeyPress);
+            document.removeEventListener('keyup', handleKeyRelease);
+            document.getElementById('stopButton').style.display = 'none'; //hide "Stop Listening" button
+
+            console.log('Recorded keys:', recordedKeys); 
+           
+            fetch('/user_input', {  //send recorded keys to backend
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userInput: recordedKeys }) //send keys as JSON
+            })
+            .then(response => response.json())
+            .then(data => console.log(data.message))
+            .catch(error => console.error('Error:', error));
+        }
+
+        function drawSquares(container) {
+            const letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k'];
+            letters.forEach(letter => {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                square.setAttribute('id', `square-${letter}`); //give each square a unique ID based on the letter
+                square.innerText = letter;
+                container.appendChild(square);
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (!listeningMode) return;
+
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            
+            if (square) {
+                recordedKeys.push(key); //record the pressed key 
+                square.classList.add('blue'); //turn the square blue
+                playMidiForKey(key); //play the corresponding MIDI file every time the key is pressed
+            }
+        }
+
+        function handleKeyRelease(event) {
+            if (!listeningMode) return;
+
+            const key = event.key.toLowerCase();
+            const square = document.getElementById(`square-${key}`);
+            if (square) {
+                square.classList.remove('blue'); //revert square color when the key is released
+            }
+        }
+
+        function playMidiForKey(key) {
+            const midiMap = {
+                'a': 'MID_FILES/c_note_one_sec.mid',
+                's': 'MID_FILES/d_note_one_sec.mid',
+                'd': 'MID_FILES/e_note_one_sec.mid',
+                'f': 'MID_FILES/f_note_one_sec.mid',
+                'g': 'MID_FILES/g_note_one_sec.mid',
+                'h': 'MID_FILES/a_note_one_sec.mid',
+                'j': 'MID_FILES/b_note_one_sec.mid',
+                'k': 'MID_FILES/c_oct_note_one_sec.mid'
+            };
+
+            const midiFile = midiMap[key];
+            if (midiFile) {
+                socket.emit('play_midi', { midiFile: midiFile }); //emit event to server to play MIDI
+            }
+        }
+
+        //listen for 'highlight_square' event from the server
+        socket.on('highlight_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.add('blue');
+            }
+        });
+
+        //listen for the 'reset_square' event to turn squares back to grey
+        socket.on('reset_square', function(data) {
+            const letter = data.letter;
+            const square = document.getElementById(`square-${letter}`);
+            if (square) {
+                square.classList.remove('blue');
+            }
+        });
+        //automatically move to next round if user input was correct
+        socket.on('next_round', function() {
+        console.log('User input was correct. Starting next round...');
+        startMelody();  //start new round automatically
+        });
+
+        //listen for 'input_incorrect' event from server
+        socket.on('input_incorrect', function(data) {
+        const { level } = data;
+        console.log(`Input was incorrect! Level: ${level}`);
+
+        // Show the message and buttons
+        const messageContainer = document.getElementById('messageContainer');
+        const messageText = document.getElementById('messageText');
+        const tryAgainButton = document.getElementById('tryAgainButton');
+        const passButton = document.getElementById('passButton');
+
+        messageText.textContent = 'Input was incorrect!';
+        messageContainer.style.display = 'block'; //show the message container
+        tryAgainButton.style.display = 'inline-block'; //show the Try Again button
+        passButton.style.display = 'inline-block'; //show the Pass button  
+        });
+
+        //function to handle "Try Again" button click
+        function tryAgain() {
+        document.getElementById('messageContainer').style.display = 'none'; //hide the message and buttons
+
+        fetch('/try_melody_again', { //replay the previous melody using the same random MIDI files
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message
+
+            //show "Start Listening" button so the user can reattempt
+            document.getElementById('listenButton').style.display = 'inline-block';
+        })
+        .catch(error => console.error('Error:', error));
+        }
+
+
+        //function to handle "Pass" button click
+        function passLevel() {
+        document.getElementById('messageContainer').style.display = 'none'; //hide the message and buttons
+
+        //move to the next round by simulating correct input
+        fetch('/pass_level', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message); //display message 
+            document.getElementById('listenButton').style.display = 'inline-block'; //show "Start Listening" button
+        })
+        .catch(error => console.error('Error:', error));
+        }
+
+    </script>
+</body>
+</html>
