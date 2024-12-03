@@ -29,3 +29,25 @@ Strengthening your memory through these games can have numerous benefits:
 - **Backend**: Flask, Flask-SocketIO, Python
 - **Database**: Postgre SQL
 - **Other Libraries**: Pygame for sound playback in games
+
+## File Groups 
+- Main Game Site - will all implementation
+    - main.app
+    - Static Folder
+    - Templates Folder
+    - globals.py
+
+- Sound Game
+    - SoundGameRelaxed.py + app_SG_relaxed.py
+    - SoundGameSurvival.py + app.py
+- Number Game
+    - NumberGamedRelaxed.py
+    - NumberGageSurvival.py
+- Rhythm game
+    - Rhythm Final Folder
+ ## To Run The Site 
+ - Make sure you have the project folder downloaded and navigate to where the folder is. In the terminal, I first ran “     set FLASK_APP=main.py” so it knows what file to read from. Then run line: flask run  , and it should give you a         local host, and allow you to see all the site has to offer. 
+
+ 
+
+
