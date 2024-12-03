@@ -8,8 +8,7 @@ import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 import pygame
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+
 
 # Local module imports
 from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
@@ -192,34 +191,6 @@ def profile():
             return redirect(url_for('login'))
     return redirect(url_for('login'))
 
-# Dashboard database 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///memory_master.db'
-db = SQLAlchemy(app)
-
-class GameActivity(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), nullable=False)
-    score = db.Column(db.Integer, nullable=False)
-    duration = db.Column(db.String(20), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime)
-
-# Records Recent Activity 
-@app.route('/game_finished', methods=['POST'])
-def game_finished():
-    if 'username' not in session:
-        return "Unauthorized", 401
-
-    username = session['username']
-    score = request.form.get('score')
-    duration = request.form.get('duration')  # E.g., "5m 23s"
-
-    # Save the game activity
-    new_activity = GameActivity(username=username, score=score, duration=duration)
-    db.session.add(new_activity)
-    db.session.commit()
-
-    return "Game activity recorded", 200
-
 # Dashboard route - only accessible for logged-in users - Liliana
 @app.route('/pythonlogin/dashboard')
 def dashboard():
@@ -231,27 +202,37 @@ def dashboard():
             cursor.execute(query, (session['id'],))
             account = cursor.fetchone()
 
-            # Query recent game activities
-            username = session['username']
-            recent_activities = GameActivity.query.filter_by(username=username).order_by(GameActivity.timestamp.desc()).limit(5).all()
-
             cursor.close()
             conn.close()
 
-            # Render the dashboard with account info and recent activities
-            return render_template(
-                'dashboard.html',
-                username=session['username'],
-                account=account,
-                highest_level=account['highest_level'],
-                recent_activities=recent_activities
-            )
+            # Survival Mode points (example data)
+            survival_sound_points = 100
+            survival_numbers_points = 150
+            survival_melody_points = 350 
+
+            # Relaxed Mode points (example data)
+            relaxed_sound_points = 250
+            relaxed_numbers_points = 300
+            relaxed_melody_points = 450
+
+            # Pass all necessary data to the template
+            return render_template('dashboard.html', 
+                                   username=session['username'], 
+                                   account=account,
+                                   highest_level=account['highest_level'],
+                                   relaxed_sound_points=relaxed_sound_points, 
+                                   relaxed_numbers_points=relaxed_numbers_points, 
+                                   relaxed_melody_points=relaxed_melody_points,
+                                   survival_sound_points=survival_sound_points,
+                                   survival_numbers_points=survival_numbers_points,
+                                   survival_melody_points=survival_melody_points)
+
         except Exception as e:
             print(f"Error fetching profile data: {e}")
             return redirect(url_for('login'))
-    else:
-        return redirect(url_for('login'))
 
+    # If not logged in, redirect to login page
+    return redirect(url_for('login'))
 
 # Leaderboard route - only accessible for logged-in users 
 @app.route('/pythonlogin/leaderboard')
