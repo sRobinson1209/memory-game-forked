@@ -194,13 +194,19 @@ def profile():
 @app.route('/pythonlogin/dashboard')
 def dashboard():
     if 'loggedin' in session:
-        # User stats info
-        user_stats = {
-            "games_played": 25,
-            "high_score": 1200,
-            "average_score": 850,
-        }
-        return render_template('dashboard.html', username=session['username'], stats=user_stats)
+       try:
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            query = 'SELECT * FROM accounts WHERE id = %s'
+            cursor.execute(query, (session['id'],))
+            account = cursor.fetchone()
+
+            cursor.close()
+            conn.close()
+            return render_template('dashboard.html', username=session['username'], account=account, highest_level=account['highest_level'])
+       except Exception as e:
+            print(f"Error fetching profile data: {e}")
+            return redirect(url_for('login'))
     return redirect(url_for('login'))
 
 # Game mode selection route

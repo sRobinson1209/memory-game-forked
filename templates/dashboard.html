@@ -44,9 +44,9 @@
             <!-- Stats Section -->
             <div class="col-md-4">
                 <div class="card text-white bg-primary mb-3">
-                    <div class="card-header">Games Played</div>
+                    <div class="card-header">Highest Level</div>
                     <div class="card-body">
-                        <h5 class="card-title">{{ stats['games_played'] }}</h5>
+                        <h5 class="card-title">{{ account['highest_level'] }}</h5>
                     </div>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                 <div class="card text-white bg-success mb-3">
                     <div class="card-header">High Score</div>
                     <div class="card-body">
-                        <h5 class="card-title">{{ stats['high_score'] }}</h5>
+                        <h5 class="card-title">{{ account['score'] }}</h5>
                     </div>
                 </div>
             </div>
@@ -62,7 +62,7 @@
                 <div class="card text-white bg-warning mb-3">
                     <div class="card-header">Average Score</div>
                     <div class="card-body">
-                        <h5 class="card-title">{{ stats['average_score'] }}</h5>
+                        <h5 class="card-title">{{ account['highest_level'] }}</h5>
                     </div>
                 </div>
             </div>
@@ -105,13 +105,17 @@
             </div>
         </div>
 
-        <!-- Add New Features -->
+        <!-- Buttons to Navigate Website -->
         <div class="row mt-4">
             <div class="col-md-6">
-                <button class="btn btn-primary w-100">Start New Game</button>
+                <a href="{{ url_for('home') }}">
+                <button class="btn btn-primary w-100" type="button">Start Playing</button>
+                </a>
             </div>
             <div class="col-md-6">
-                <button class="btn btn-secondary w-100">View Leaderboard</button>
+                <a href="{{ url_for('home') }}">
+                <button class="btn btn-primary w-100" type="button">View Leaderboard</button>
+                </a>
             </div>
         </div>
     </div>
