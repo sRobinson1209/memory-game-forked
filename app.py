@@ -9,6 +9,7 @@ from flask_socketio import SocketIO, emit
 import random
 import time
 import pygame
+#import render_template
 
 from SoundGameSurvival import letters_and_files_dict, get_midi_files, get_user_input, check_user_input
 
@@ -31,7 +32,7 @@ letters = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k']
 #route to serve index.HTML file
 @app.route('/')
 def melody_memory_sur():
-    return render_template('index_SG_Survival.html')
+    return send_file('index_SG_Survival.html')
 
 #SocketIO event to play specific MIDI file
 @socketio.on('play_midi')
