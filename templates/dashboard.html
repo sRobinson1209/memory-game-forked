@@ -76,30 +76,18 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Date</th>
                             <th>Score</th>
                             <th>Duration</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>2024-11-20</td>
-                            <td>950</td>
-                            <td>5m 23s</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>2024-11-18</td>
-                            <td>880</td>
-                            <td>6m 15s</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>2024-11-15</td>
-                            <td>1020</td>
-                            <td>4m 45s</td>
-                        </tr>
+                        {% for activity in recent_activities %}
+                             <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ activity.score }}</td>
+                                <td>{{ activity.duration }}</td>
+                             </tr>
+                         {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -113,7 +101,7 @@
                 </a>
             </div>
             <div class="col-md-6">
-                <a href="{{ url_for('home') }}">
+                <a href="{{ url_for('leaderboard') }}">
                 <button class="btn btn-primary w-100" type="button">View Leaderboard</button>
                 </a>
             </div>

@@ -65,3 +65,18 @@ new Chart(ctx2, {
         }
     }
 });
+
+//Recent Activity
+function sendGameActivity(score, duration) {
+    fetch('/game_finished', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score: score, duration: duration })
+    }).then(response => {
+        if (response.ok) {
+            alert('Game activity recorded!');
+        } else {
+            alert('Error saving game activity.');
+        }
+    });
+}
