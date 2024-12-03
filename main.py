@@ -8,6 +8,7 @@ import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 import pygame
+import re
 
 # Local module imports
 from NumberGame.NumberGameRelaxed import set_level_parameters_relaxed
